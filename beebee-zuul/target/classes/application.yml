@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: beebee-zuul
+server:
+  port: 8070
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://archives:password123@localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+zuul:
+  routes:
+    beebee-archives-provider: /users/**
+  ignored-services: '*'

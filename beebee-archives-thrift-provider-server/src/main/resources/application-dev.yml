@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: beebee-archives-thrift-provider-server
+  datasource:
+    druid:
+      driver-class-name: com.mysql.jdbc.Driver
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      aop-patterns: com.quwan.beebee.service.*
+  aop:
+    proxy-target-class: true
+
+  data:
+    mongodb:
+      host: 192.168.0.104
+      port: 27017
+      database: chenxiaochan
+
+  redis:
+    host: 192.168.106.132
+    port: 6379
+    pool:
+      max-idle: 20
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+
+server:
+  port: 10131
+
+thrift:
+  server:
+    port: 10141
+
+# first 数据源配置
+first:
+  datasource:
+    name: archives-first
+    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_onlytest
+    password: onlytest@123
+
+# first 数据源配置
+second:
+  datasource:
+    name: archives-second
+    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_onlytest
+    password: onlytest@123
+
+# third 数据源配置
+third:
+  datasource:
+    name: archives-third
+    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_onlytest
+    password: onlytest@123
+
+# 禁止自动注册eureka，仅dev模式使用
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false

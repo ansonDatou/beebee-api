@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: beebee-common-service-thrift-consumer
+
+server:
+  port: 9711
+
+# 禁止自动注册eureka，仅dev模式使用
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false

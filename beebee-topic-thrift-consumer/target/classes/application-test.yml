@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: beebee-topic-thrift-consumer
+server:
+  port: 10211
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.17.2.172:8761/eureka
+  instance:
+    prefer-ip-address: true
+beebee-topic-thrift-consumer: # 服务提供者的名称
+  ribbon:
+    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule

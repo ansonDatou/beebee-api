@@ -1,0 +1,101 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.quwan.beebee</groupId>
+		<artifactId>beebee-api</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<name>beebee-eureka</name>
+	<artifactId>beebee-eureka</artifactId>
+	<packaging>jar</packaging>
+
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-eureka-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-log4j</artifactId>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<properties>
+				<profiles.active>dev</profiles.active>
+			</properties>
+			<build>
+				<filters>
+					<filter>src/main/resources/application-dev.yml</filter>
+				</filters>
+			</build>
+		</profile>
+		<profile>
+			<id>test</id>
+			<properties>
+				<profiles.active>test</profiles.active>
+			</properties>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<build>
+				<filters>
+					<filter>src/main/resources/application-test.yml</filter>
+				</filters>
+			</build>
+		</profile>
+		<profile>
+			<id>pro</id>
+			<properties>
+				<profiles.active>pro</profiles.active>
+			</properties>
+			<build>
+				<filters>
+					<filter>src/main/resources/application-pro.yml</filter>
+				</filters>
+			</build>
+		</profile>
+	</profiles>
+
+	<build>
+		<finalName>beebee-eureka</finalName>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>**/*</include>
+				</includes>
+				<filtering>true</filtering>
+				<excludes>
+					<!--开发时，不要排除掉正在使用的配置文件，各个环境下，配置好要排除的文件-->
+					<!--<exclude>application.yml</exclude>-->
+					<!--<exclude>application-dev.yml</exclude>-->
+					<!--<exclude>application-pro.yml</exclude>-->
+					<!--<exclude>application-test.yml</exclude>-->
+				</excludes>
+			</resource>
+		</resources>
+	</build>
+
+</project>

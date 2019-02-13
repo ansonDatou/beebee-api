@@ -1,0 +1,12 @@
+com/quwan/beebee/design/pattern/ArchivesComment.class
+com/quwan/beebee/config/RedisCacheConfig.class
+com/quwan/beebee/design/pattern/ReplyComment.class
+com/quwan/beebee/config/RedisCacheConfig$1.class
+com/quwan/beebee/ArchivesThriftProviderServerApplication.class
+com/quwan/beebee/service/impl/ArchivesServiceImpl$1.class
+com/quwan/beebee/config/ThriftConfig$1.class
+com/quwan/beebee/design/pattern/Context.class
+com/quwan/beebee/config/ThriftConfig.class
+com/quwan/beebee/service/impl/ArchivesServiceImpl.class
+com/quwan/beebee/design/pattern/ReplyTwoComment.class
+com/quwan/beebee/design/pattern/Comment.class

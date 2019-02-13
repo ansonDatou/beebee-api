@@ -1,0 +1,203 @@
+#spring:
+#  profiles:
+#    active: test # 环境 dev|test|pro
+
+
+
+# 本地测试 --------------------------------------------------------------------------------------------------------------
+#spring:
+#  application:
+#    name: beebee-archives-thrift-provider-server
+#  datasource:
+#    druid:
+#      driver-class-name: com.mysql.jdbc.Driver
+#      initial-size: 1
+#      min-idle: 1
+#      max-active: 20
+#      max-wait: 60000
+#      time-between-eviction-runs-millis: 60000
+#      min-evictable-idle-time-millis: 300000
+#      validation-query: SELECT 1
+#      test-while-idle: true
+#      test-on-borrow: false
+#      test-on-return: false
+#      pool-prepared-statements: true
+#      max-pool-prepared-statement-per-connection-size: 20
+#      aop-patterns: com.quwan.beebee.service.*
+#  aop:
+#    proxy-target-class: true
+#
+#  data:
+#    mongodb:
+#      host: 192.168.0.104
+#      port: 27017
+#      database: chenxiaochan
+#
+## first 数据源配置
+#first:
+#  datasource:
+#    name: archives-first
+#    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+#    username: beebee_onlytest
+#    password: onlytest@123
+#
+## first 数据源配置
+#second:
+#  datasource:
+#    name: archives-second
+#    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+#    username: beebee_onlytest
+#    password: onlytest@123
+#
+## third 数据源配置
+#third:
+#  datasource:
+#    name: archives-third
+#    url: jdbc:mysql://rm-2zey2b8o1f6v9i855o.mysql.rds.aliyuncs.com:3306/testonly?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+#    username: beebee_onlytest
+#    password: onlytest@123
+#
+#eureka:
+#  client:
+#    healthcheck:
+#      enabled: true
+#    serviceUrl:
+#      defaultZone: http://user:password123@localhost:8761/eureka
+#  instance:
+#    prefer-ip-address: true # 在管控台URL的显示，默认是false
+#    instance-id: ${spring.application.name}:${spring.cloud.client.ipAddress}:${spring.application.instance_id:${server.port}} # 管控台显示
+#    metadata-map:
+#      zone: ABC      # eureka可以理解的元数据
+#      lilizhou: BBC  # 不会影响客户端行为
+#    lease-renewal-interval-in-seconds: 5
+#
+#---
+#server:
+#  port: 10131
+#thrift:
+#  server:
+#    port: 10141
+#spring:
+#  profiles: archives-server1
+#---
+#server:
+#  port: 10132
+#thrift:
+#  server:
+#    port: 10142
+#spring:
+#  profiles: archives-server2
+#---
+#server:
+#  port: 10133
+#thrift:
+#  server:
+#    port: 10143
+#spring:
+#  profiles: archives-server3
+
+
+
+# 正式服务器 ------------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: beebee-archives-thrift-provider-server
+  datasource:
+    druid:
+      driver-class-name: com.mysql.jdbc.Driver
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      aop-patterns: com.quwan.beebee.service.*
+  aop:
+    proxy-target-class: true
+
+  data:
+    mongodb:
+      host: dds-2ze7b96f7a145e241.mongodb.rds.aliyuncs.com
+      port: 3717
+      database: admin
+      username: root
+      password: Beebee@pro@456
+
+  redis:
+    host: r-2zeb3048fedbce94.redis.rds.aliyuncs.com
+    port: 6379
+    password: FASTfast1234
+    pool:
+      max-idle: 20
+      min-idle: 1
+      max-active: -1
+      max-wait: 60000
+
+# first 数据源配置
+first:
+  datasource:
+    name: archives-first
+    url: jdbc:mysql://rm-2ze1435lmf3vg8335.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+# second 数据源配置
+second:
+  datasource:
+    name: archives-second
+    url: jdbc:mysql://rr-2zeu7gjta385rei35.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+# third 数据源配置
+third:
+  datasource:
+    name: archives-third
+    url: jdbc:mysql://rr-2ze06920g05u6j3dd.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.16.9.232:8761/eureka
+  instance:
+    prefer-ip-address: true # 在管控台URL的显示，默认是false
+    instance-id: ${spring.application.name}:${spring.cloud.client.ipAddress}:${spring.application.instance_id:${server.port}} # 管控台显示
+    metadata-map:
+      zone: ABC      # eureka可以理解的元数据
+      lilizhou: BBC  # 不会影响客户端行为
+    lease-renewal-interval-in-seconds: 5
+
+---
+server:
+  port: 10131
+thrift:
+  server:
+    port: 10141
+spring:
+  profiles: archives-server1
+---
+server:
+  port: 10132
+thrift:
+  server:
+    port: 10142
+spring:
+  profiles: archives-server2
+---
+server:
+  port: 10133
+thrift:
+  server:
+    port: 10143
+spring:
+  profiles: archives-server3

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quwan.beebee.dao.CommonDao">
+
+	<!-- 根据条件，查询验证码状态 -->
+	<select id="getAuthcode" parameterType="com.quwan.beebee.param.third.AuthcodeParam" resultType="java.lang.String">
+		SELECT used FROM bb_mobile_auth WHERE mobile = #{mobile} AND authcode = #{authcode}
+		<!-- AND type = #{param.type} -->
+	</select>
+
+	<!-- 修改验证码状态 -->
+	<update id="updateAuthcodeStatus" parameterType="com.quwan.beebee.param.third.AuthcodeParam">
+		update bb_mobile_auth set used = 1 where mobile = #{mobile} AND authcode = #{authcode}
+		<!-- AND type = #{param.type} -->
+	</update>
+
+	<!-- 获取banner-陈晓婵 -->
+	<select id="getBanner" parameterType="com.quwan.beebee.param.common.GetBannerParam" resultType="com.quwan.beebee.resp.common.GetBannerResp">
+		SELECT type,content FROM bb_banner WHERE module = #{block} AND classify = #{classify}
+	</select>
+
+	<!-- 上传图片-陈晓婵 -->
+	<insert id="uploadImg" parameterType="com.quwan.beebee.param.common.UploadImgParam">
+		INSERT INTO bb_image(user_id, url) VALUES (#{param.userId}, #{param.data})
+	</insert>
+	
+	<!-- 获取预设内容 -李静 -->
+	<select id="getPreset" parameterType="int" resultType="java.lang.String">
+		SELECT content FROM bb_preset WHERE type = #{type}
+	</select>
+
+	<!-- 获取需要推送的内容列表 -->
+	<select id="getPushList" resultType="com.quwan.beebee.resp.common.CommonPushResp">
+		SELECT id, user_id userId, addtime, joinCount FROM bb_push;
+	</select>
+
+	<!-- 获取用户 -->
+	<select id="queryUser" parameterType="int" resultType="int">
+		SELECT COUNT(*) FROM bb_push WHERE user_id = #{userId}
+	</select>
+
+	<!-- 添加发布内容 -->
+	<insert id="addUser" parameterType="int">
+		INSERT INTO bb_push(user_id, addtime, joinCount) VALUES (#{userId}, SYSDATE(), 0);
+	</insert>
+
+	<!-- 清空参与人数 -->
+	<update id="updateUserCount" parameterType="int">
+		UPDATE bb_push SET addtime = SYSDATE(), joinCount = 0 WHERE user_id = #{userId};
+	</update>
+
+	<!-- 增加推送人数 -->
+	<update id="updatePushCount" parameterType="int">
+		UPDATE bb_push SET joinCount = joinCount + 1 WHERE user_id = #{userId};
+	</update>
+
+	<!-- 更新推送时间 -->
+	<update id="updatePushTime" parameterType="int">
+		UPDATE bb_push SET addtime = SYSDATE() WHERE user_id = #{userId};
+	</update>
+
+	<!-- 获取最新版本号 -->
+	<select id="getLastVersion" resultType="com.quwan.beebee.resp.common.GetLastVersionResp">
+		SELECT id, version_code versionCode, version_name versionName, version_url url, version_content content,
+			add_time addTime FROM bb_version ORDER BY bb_version.add_time DESC;
+	</select>
+
+	<!-- 添加用户反馈 -->
+	<insert id="addUserFeedBack" parameterType="com.quwan.beebee.param.common.UserFeedBackParam">
+		INSERT INTO bb_user_feedback(user_id, content, device_id, device_type, phone, email, qq)
+		VALUES (#{param.userId}, #{param.content}, #{param.deviceId}, #{param.deviceType}, #{param.phone}, #{param.email}, #{param.qq})
+	</insert>
+
+	<select id="getBLacklist" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT black_user_id FROM bb_user_blacklist WHERE user_id = #{userId}
+	</select>
+</mapper>

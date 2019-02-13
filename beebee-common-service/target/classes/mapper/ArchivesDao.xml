@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quwan.beebee.dao.ArchivesDao">
+
+	<!-- 一对多，评论回复 -->
+	<resultMap id="commentAndAnswer" type="com.quwan.beebee.resp.archives.CommentAnswerListResp">
+		<id column="arch_id" property="archId"/>
+		<collection property="commentListResp" ofType="com.quwan.beebee.resp.archives.CommentListResp">
+			<result column="id" property="commentId"/>
+			<result column="content" property="content"/>
+			<result column="user_id" property="userId"/>
+			<result column="addtime" property="addTime"/>
+			<result column="uname" property="username"/>
+			<result column="head" property="head"/>
+			<result column="nicker" property="nickname"/>
+			<collection property="commentAnswerList" ofType="com.quwan.beebee.resp.archives.CommentAnswerResp">
+				<result column="answerId" property="answerId"/>
+				<result column="headAnswer" property="headAnswer"/>
+				<result column="nicknameAnswer" property="nicknameAnswer"/>
+				<result column="nicknameNotify" property="nicknameNotify"/>
+				<result column="user_id_answer" property="userIdAnswer"/>
+				<result column="user_id_notify" property="userIdNotify"/>
+				<result column="contentAnswer" property="content"/>
+				<result column="answer_time" property="answerTime"/>
+			</collection>
+		</collection>
+	</resultMap>
+
+	<!-- 获取所有文章分类 -->
+	<select id="getArchivesSort" resultType="com.quwan.beebee.resp.archives.ArchivesSortResp">
+		SELECT * FROM bb_archives_sort WHERE status = 1
+	</select>
+
+	<!-- 首页查询文章 单数据源 -->
+	<select id="queryArchivesList" resultType="com.quwan.beebee.resp.archives.ArchivesListResp"
+			parameterType="com.quwan.beebee.param.archives.ArchivesListParam">
+		SELECT id, click, comment, collection, relay, title, imgurl imgUrl, larimgurl larImgUrl, imgsize imgSize, pubtime pubTime,
+		source, videourl videoUrl, cat1, sourcetype sourceType
+		FROM bb_archives_v2
+		WHERE sourcetype = #{sourceType} AND sort_id = #{sortId}
+		ORDER BY id DESC
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+
+	<!-- 首页查询文章的总数 -->
+	<select id="queryArchivesTotal" resultType="int" parameterType="com.quwan.beebee.param.archives.ArchivesListParam">
+		SELECT COUNT(*) FROM bb_archives_v2
+		WHERE sourcetype = #{sourceType} AND sort_id = #{sortId}
+	</select>
+
+	<!-- 首页查询文章 score 排序 -->
+	<select id="getArchivesList" resultType="com.quwan.beebee.resp.archives.ArchivesListResp"
+			parameterType="com.quwan.beebee.param.archives.ArchivesListParam">
+		SELECT id, click, comment, collection, relay, title, imgurl imgUrl, larimgurl larImgUrl, imgsize imgSize, pubtime pubTime,
+		source, videourl videoUrl, cat1, sourcetype sourceType
+		FROM bb_archives_v2
+		WHERE sourcetype = #{sourceType} AND sort_id = #{sortId}
+		<if test="userId > 0">
+			AND read_user_id NOT IN (#{userId})
+		</if>
+		ORDER BY score DESC
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+
+	<!-- 首页查询文章的总数 score 排序 -->
+	<select id="getArchivesTotal" resultType="int" parameterType="com.quwan.beebee.param.archives.ArchivesListParam">
+		SELECT COUNT(*) FROM bb_archives_v2
+		WHERE sourcetype = #{sourceType} AND sort_id = #{sortId} AND read_user_id NOT IN (#{userId})
+	</select>
+
+	<!-- 根据id查询文章 @李静 -->
+	<select id="getArchiveById" resultType="com.quwan.beebee.entity.archives.Archives"
+			parameterType="int">
+		SELECT id, click, comment, collection, relay, title, imgurl imgUrl, larimgurl larImgUrl, imgsize imgSize, pubtime pubTime,
+		source, videourl videoUrl, cat1, sourcetype sourceType ,praise, content, read_user_id readUserId
+		FROM bb_archives_v2
+		<where>
+			id = #{id}
+		</where>
+	</select>
+
+	<!-- 首页查询文章 多数据源
+	<select id="queryArchivesList" resultType="com.quwan.beebee.entity.archives.Archives"
+			parameterType="com.quwan.beebee.param.archives.ArchivesListParam">
+		SELECT id, click, comment, relay, title FROM bb_archives_v2
+		<where>
+			sourcetype = #{sourceType}
+		</where>
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+	-->
+
+	<!-- 回复评论 -->
+	<insert id="answerComment" parameterType="com.quwan.beebee.param.archives.AnswerParam">
+		INSERT INTO bb_archives_comment_answer (arch_id, arch_comm_id, content, user_id_answer, user_id_notify, answer_time)
+		VALUES (#{param.archId}, #{param.commentId}, #{param.content}, #{param.userIdAnswer}, #{param.userIdNotify}, #{param.answerTime});
+	</insert>
+
+	<!-- 1 查询文章评价及评价回复 -->
+	<select id="getCommentList" resultMap="commentAndAnswer" parameterType="com.quwan.beebee.param.archives.CommentListParam">
+		SELECT t1.id, t1.arch_id, t1.content, t1.user_id, t1.addtime,
+			   t2.uname, t2.head, ifnull(nullif(t2.nicker, ''), t2.mobile) nicker,
+			   t3.user_id_answer, t3.user_id_notify, t3.content contentAnswer, t3.answer_time, t3.id answerId,
+			   t4.head headAnswer, ifnull(nullif(t4.nicker, ''), t4.mobile) nicknameAnswer,
+			   ifnull(nullif(t5.nicker,''), t5.mobile) nicknameNotify
+		FROM bb_archives_v2_comment t1
+		JOIN bb_user t2 ON t1.user_id = t2.id
+		LEFT JOIN bb_archives_comment_answer t3 ON t1.id = t3.arch_comm_id
+		LEFT JOIN bb_user t4 ON t3.user_id_answer = t4.id
+		LEFT JOIN bb_user t5 ON t3.user_id_notify = t5.id
+		WHERE t1.arch_id = #{param.archId}
+		ORDER BY t1.addtime DESC
+		LIMIT #{param.pageNumber}, #{param.pageSize}
+	</select>
+
+	<!-- 2 查询文章评论的总数 -->
+	<select id="getCommentListTotal" parameterType="com.quwan.beebee.param.archives.CommentListParam" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_comment WHERE arch_id = #{param.archId}
+		<if test="userIds != null and userIds.size() > 0">
+			AND user_id NOT IN
+			<foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 1 获取评论list limit #{pageNumber}, #{pageSize} -->
+	<select id="getComments" resultType="com.quwan.beebee.resp.archives.CommentAnswersResp"
+			parameterType="com.quwan.beebee.param.archives.CommentListParam">
+		SELECT t1.id commentId, t1.arch_id archId, t1.content commentContent, t1.user_id userId, t1.addtime addTime,
+		t2.uname username, t2.head, ifnull(nullif(t2.nicker, ''), t2.mobile) nickname, 0 type
+		FROM bb_archives_v2_comment t1
+		JOIN bb_user t2 ON t1.user_id = t2.id
+		WHERE t1.arch_id = #{param.archId}
+		<if test="userIds != null and userIds.size() > 0">
+			AND t1.user_id NOT IN
+			<foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+		</if>
+		ORDER BY t1.addtime DESC
+	</select>
+
+	<!-- 2 获取回复评论list limit #{pageNumber}, #{pageSize} -->
+	<select id="getAnswers" resultType="com.quwan.beebee.resp.archives.CommentAnswersResp"
+			parameterType="com.quwan.beebee.param.archives.CommentListParam">
+		SELECT t1.arch_id archId, t1.id answerId, t1.content answerContent, t1.user_id_answer userIdAnswer,
+		t1.user_id_notify userIdNotify, t1.answer_time addTime, t2.head headAnswer,
+		ifnull(nullif(t2.nicker, ''), t2.mobile) nicknameAnswer,
+		ifnull(nullif(t3.nicker, ''), t3.mobile) nicknameNotify, 1 type
+		FROM bb_archives_comment_answer t1
+		JOIN bb_user t2 ON t1.user_id_answer = t2.id
+		JOIN bb_user t3 ON t1.user_id_notify = t3.id
+		WHERE t1.arch_id = #{param.archId}
+		<if test="userIds != null and userIds.size() > 0">
+			AND t1.user_id_answer NOT IN
+			<foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+		</if>
+		ORDER BY t1.answer_time DESC
+	</select>
+
+	<!-- 3 查询评论和回复评论的总数 -->
+	<select id="getCommentAndAnswerTotal" parameterType="com.quwan.beebee.param.archives.CommentListParam" resultType="int">
+		SELECT t1.total + t2.total total
+		FROM (SELECT COUNT(id) total FROM bb_archives_v2_comment WHERE arch_id = #{archId}) t1,
+		(SELECT COUNT(id) total FROM bb_archives_comment_answer WHERE arch_id = #{archId}) t2
+	</select>
+
+	<!-- 文章阅读完/未阅读完人数加1 -->
+	<update id="updateArchivesReadStatusNum" >
+		UPDATE bb_archives_v2 SET
+		<if test="null != status and 1 == status">
+			read_finished = read_finished + 1
+		</if>
+		<if test="null != status and 2 == status">
+			read_unfinished = read_unfinished + 1
+		</if>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 获取该设备最后一条未修改阅读状态的记录id -->
+	<select id="getLastUnreadIdByCondition" resultType="int">
+		SELECT id FROM bb_client_readlog WHERE cid = #{cid} AND type = #{type} AND arch_id = #{archId} AND readstatus = 0
+		ORDER BY id DESC LIMIT 1
+	</select>
+
+	<!-- 设置阅读状态 -->
+	<update id="updateClientReadLog" parameterType="com.quwan.beebee.param.archives.ArchivesReadParam">
+		UPDATE bb_client_readlog SET duration = #{param.duration}, readstatus = #{param.status} WHERE id = #{id}
+	</update>
+
+	<!-- 文章是否收藏 -->
+	<select id="isCollection" parameterType="com.quwan.beebee.param.archives.ArchivesUserParam" resultType="int" >
+		SELECT COUNT(1) FROM bb_archives_v2_collection WHERE valid = 1 AND arch_id = #{param.archId} AND user_id = #{param.userId}
+	</select>
+
+	<!-- 文章收藏表是否有该记录 李静  -->
+	<select id="hasCollection" parameterType="com.quwan.beebee.param.archives.ArchivesUserParam" resultType="int" >
+		SELECT count(*) FROM bb_archives_v2_collection
+		WHERE arch_id = #{param.archId} AND user_id = #{param.userId}
+	</select>
+
+	<!-- 添加文章收藏 李静  -->
+	<insert id="addCollection" parameterType="com.quwan.beebee.param.archives.ArchivesCollectionParam">
+		INSERT INTO bb_archives_v2_collection (arch_id,user_id,valid)
+		VALUES (#{param.archId}, #{param.userId}, #{param.valid})
+	</insert>
+
+	<!-- 修改文章收藏状态 李静  -->
+	<update id="updateCollection" parameterType="com.quwan.beebee.param.archives.ArchivesCollectionParam">
+		UPDATE bb_archives_v2_collection SET valid = #{param.valid}
+		WHERE arch_id = #{param.archId} AND user_id = #{param.userId}
+	</update>
+
+	<!-- 同步  用户表 收藏数量 李静  -->
+	<update id="syncUserCollectionCount">
+		UPDATE bb_user SET collection = (SELECT count(*) FROM bb_archives_v2_collection WHERE user_id = #{userId} AND valid = 1)
+		WHERE id = #{userId}
+	</update>
+
+	<!-- 同步 文章表  收藏数量 李静  -->
+	<update id="syncArchiveCollectionCount">
+		UPDATE bb_archives_v2 SET collection = (SELECT count(*) FROM bb_archives_v2_collection WHERE arch_id = #{archId} AND valid = 1)
+		WHERE id = #{archId}
+	</update>
+
+	<!-- 文章是否点赞 -->
+	<select id="isPraise" parameterType="com.quwan.beebee.param.archives.ArchivesUserParam" resultType="int" >
+		SELECT COUNT(1) FROM bb_archives_v2_praise
+		WHERE valid = 1 AND arch_id = #{param.archId} AND user_id = #{param.userId}
+		<!--<choose>-->
+			<!--<when test="param.userId != null ">-->
+				<!--user_id = #{param.userId}-->
+			<!--</when>-->
+			<!--<otherwise>-->
+				<!--cid = #{param.deviceId} AND ctype = #{param.deviceType}-->
+			<!--</otherwise>-->
+		<!--</choose>-->
+	</select>
+
+	<!-- 举报文章 -->
+	<insert id="addComplain">
+		INSERT INTO bb_archives_v2_complain (arch_id, user_id,cid, ctype,reason)
+		VALUES (#{param.archId}, #{param.userId}, #{param.deviceId}, #{param.deviceType}, #{param.reason})
+	</insert>
+
+	<!-- 添加文章转发记录 -->
+	<insert id="addShare">
+		INSERT INTO bb_archives_v2_share (arch_id, user_id, cid,ctype, target)
+		VALUES (#{param.archId}, #{param.userId}, #{param.deviceId}, #{param.deviceType}, #{param.target})
+	</insert>
+
+	<!-- 添加活动转发记录-陈晓婵-2018年1月6日11:04:34 -->
+	<insert id="addShareTopic" parameterType="com.quwan.beebee.param.archives.ArchivesShareParam">
+		INSERT INTO bb_topic_share (topic_id,user_id,target)
+		VALUES (#{param.topicId},#{param.userId},#{param.target})
+	</insert>
+
+	<!-- 同步用户表转发数量 李静 -->
+	<update id="syncUserShareCount">
+		UPDATE bb_user SET relay = #{totalShareCount} WHERE id = #{userId}
+	</update>
+
+	<!-- 获取文章转发数量-陈晓婵-2018年1月6日17:01:36-->
+	<select id="getArchiShareCount" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_share WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取活动转发数量-陈晓婵-2018年1月6日17:01:47 -->
+	<select id="getTopicShareCount" resultType="int">
+		SELECT COUNT(*) FROM bb_topic_share WHERE user_id =#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 同步文章表转发数量 李静 -->
+	<update id="syncArchiveShareCount">
+		UPDATE bb_archives_v2 SET relay = (SELECT COUNT(1) FROM bb_archives_share WHERE arch_id = #{archId}) WHERE id = #{archId}
+	</update>
+
+	<!-- 查询单条文章点赞记录 -->
+	<select id="getArchivesPraise" parameterType="com.quwan.beebee.param.archives.ArchivesPraiseParam"
+			resultType="com.quwan.beebee.resp.archives.ArchivesPraiseResp">
+		SELECT  id,arch_id archId, user_Id userId, cid deviceId, ctype deviceType, valid, modtime modTime, addtime addTime
+		FROM  bb_archives_v2_praise WHERE arch_id = #{archId} AND user_id = #{userId}
+	</select>
+
+	<!-- 文章点赞 -->
+	<insert id="addArchivesPraise" parameterType="com.quwan.beebee.param.archives.ArchivesPraiseParam">
+		INSERT INTO bb_archives_v2_praise (arch_id, user_Id,cid, ctype, valid, modtime, addtime)
+		VALUES (#{archId}, #{userId}, #{deviceId}, #{deviceType}, #{valid}, SYSDATE(), SYSDATE())
+	</insert>
+
+	<!-- 文章取消点赞 -->
+	<update id="updateArchivesPraise" parameterType="com.quwan.beebee.param.archives.ArchivesPraiseParam">
+		UPDATE  bb_archives_v2_praise SET valid = #{valid}, modtime = SYSDATE()
+		WHERE arch_id = #{archId} AND user_id = #{userId}
+	</update>
+
+	<!-- 同步 文章表点赞数量 何飞达  -->
+	<update id="syncArchivePraiseCount" parameterType="int">
+		UPDATE bb_archives_v2 SET praise = (SELECT count(*) FROM bb_archives_v2_praise WHERE arch_id = #{archId} AND valid = 1)
+		WHERE id = #{archId}
+	</update>
+
+	<!-- 推荐文章 何飞达 -->
+	<select id="pushArchivesList" parameterType="com.quwan.beebee.param.archives.ArchivesPushParam"
+			resultType="com.quwan.beebee.resp.archives.ArchivesListResp">
+		SELECT  id, click, comment, relay, title, imgurl imgUrl, larimgurl larImgUrl, imgsize imgSize,
+		DATE_FORMAT(pubtime,'%Y-%c-%d %H:%i:%s') AS  pubTime, source, videourl videoUrl, cat1, sourcetype sourceType
+		FROM bb_archives_v2
+		WHERE id NOT IN (SELECT distinct arch_id FROM bb_client_v2_readlog WHERE user_id = #{userId})
+		<if test="pushType == 0 or pushType == null or pushType == ''">
+			ORDER BY click DESC
+		</if>
+		<if test="pushType == 1">
+			ORDER BY comment DESC
+		</if>
+		<if test="pushType == 2">
+			ORDER BY collection DESC
+		</if>
+		<if test="pushType == 3">
+			ORDER BY relay DESC
+		</if>
+		<if test="pushType == 4">
+			ORDER BY read_finished DESC
+		</if>
+		LIMIT 0, #{pushNum}
+	</select>
+
+	<!-- 回复评论后，文章评论数加一 -->
+	<update id="updateArchivesComment" parameterType="com.quwan.beebee.param.archives.AnswerParam">
+		UPDATE bb_archives_v2 SET comment = comment + 1 WHERE id = #{archId}
+	</update>
+
+	<!-- 根据文章id 获取文章标签 @lijing -->
+	<select id="getArchivesTagsById" parameterType="int" resultType="com.quwan.beebee.entity.archives.ArchivesTag">
+		SELECT tag from bb_archives_tag WHERE arch_id = #{archId}
+	</select>
+
+	<!-- 保存用户标签  @lijing -->
+	<insert id="saveUserTags" parameterType="java.util.List">
+		INSERT bb_user_tag (user_id,tag,sortrank,modifytime) VALUES
+	    <foreach collection="paramList" item="item" index="index" separator="," >
+	        (#{item.userId},#{item.tag},100,#{item.modifyTime})
+	    </foreach>
+		ON DUPLICATE KEY UPDATE sortrank = sortrank + 100
+	</insert>
+
+	<update id="updateClickCount" parameterType="com.quwan.beebee.param.archives.ArchivesContentParam">
+		UPDATE bb_archives_v2 SET click = click + 1, read_user_id = #{readUserId} WHERE id = #{id}
+	</update>
+
+	<!--<update id="updateArchivesRead" parameterType="com.quwan.beebee.param.archives.ArchivesContentParam">-->
+		<!--UPDATE bb_archives_v2 SET read_user_id = CONCAT(read_user_id, '', if(read_user_id = '' or read_user_id is null, #{param.userId}, concat(',', #{param.userId}))) WHERE id = #{param.id}-->
+	<!--</update>-->
+
+	<!-- 文章评论 -->
+	<insert id="addComment" parameterType="com.quwan.beebee.param.archives.ArchivesCommentParam" >
+		INSERT INTO bb_archives_v2_comment (arch_id, content,user_id)
+		VALUES (#{param.archId}, #{param.content}, #{param.userId})
+	</insert>
+
+	<update id="syncCommentCount" parameterType="int">
+	    UPDATE bb_archives_v2 SET comment = (select count(*) from bb_archives_v2_comment where arch_id = #{archId}) where id = #{archId};
+	</update>
+
+    <update id="syncUserCommentCount" parameterType="int">
+        UPDATE bb_user SET comment = (select count(*) from bb_archives_v2_comment where user_id = #{userId}) where id = #{userId};
+    </update>
+
+
+	<!-- <insert id="addClientReadLog" parameterType="com.quwan.beebee.param.archives.ArchivesContentParam">
+		insert into bb_client_readlog (cid, type, user_id, arch_id)
+		VALUES (#{param.deviceId}, #{param.deviceType}, #{param.userId}, #{param.id})
+	</insert> -->
+
+	<!-- 根据用户id查询转发记录条数-陈晓婵-2018年1月6日13:20:54 -->
+	<select id="getRelayByUserId" parameterType="com.quwan.beebee.param.archives.ArchivesShareParam" resultType="int">
+		SELECT relay FROM bb_user WHERE id=#{userId}
+	</select>
+	
+	<!-- 获取用户当天的评论文章的个数-陈晓婵-2018年1月8日15:56:28 -->
+	<select id="getArchivesCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_comment WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取用户当天的评论哔哔的个数-陈晓婵-2018年1月8日15:58:32 -->
+	<select id="getTopicCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_topic_comment WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+	
+	<!-- 判断今天是否回复别人的评论-陈晓婵-2018年1月8日19:33:26 -->
+	<select id="getCommentAnswer" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_comment_answer WHERE user_id_answer=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 测试方法 -->
+	<select id="queryCollectionList" resultType="com.quwan.beebee.entity.archives.ArchivesCollection">
+		select id, arch_id archId, user_id userId, valid, modtime, addtime from bb_archives_collection limit 0, 10
+	</select>
+
+	<!-- 首页getList的其中之一 -->
+	<select id="queryCollectionListByIds" resultType="com.quwan.beebee.entity.archives.ArchivesCollection">
+		select id, arch_id archId, user_id userId, valid, modtime, addtime
+		from bb_archives_collection
+		where arch_id in (#{ids})
+	</select>
+
+	<insert id="recordUserBehavior" parameterType="java.util.List">
+		insert into user_behavior (user_id, act_obj, obj_type, bhv_type, bhv_amt, bhv_cnt, bhv_datetime) values
+		<foreach collection="list" item="item" separator=",">
+			(#{item.userId}, #{item.actObj}, #{item.objType}, #{item.bhvType}, #{item.bhvAmt}, #{item.bhvCnt}, #{item.bhvDateTime})
+		</foreach>
+	</insert>
+
+	<select id="queryTagList" resultType="com.quwan.beebee.entity.archives.Tag">
+		select * from manualtagging limit 0,10
+	</select>
+
+	<select id="queryTagListByIds" resultType="com.quwan.beebee.entity.archives.Tag">
+		select * from manualtagging
+		where id in
+		<foreach collection="ids" open="(" close=")" item="id" separator=",">
+			#{id}
+		</foreach>
+	</select>
+	
+	<!--  插入用户积分日志-陈晓婵-2018年1月17日21:10:12 -->
+	<insert id="insertIntegralLog" parameterType="com.quwan.beebee.resp.user.UserIntegralLogResp">
+		INSERT INTO bb_user_integral_log (user_id,integral,type,title,typedesc,typeid) VALUES (#{param.userId},#{param.integral},#{param.type},#{param.title},#{param.typeDesc},#{param.typeId})
+	</insert>
+</mapper>

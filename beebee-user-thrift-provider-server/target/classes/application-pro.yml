@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: beebee-user-thrift-provider-server
+  datasource:
+    druid:
+      driver-class-name: com.mysql.jdbc.Driver
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      aop-patterns: com.quwan.beebee.service.*
+  aop:
+    proxy-target-class: true
+
+  data:
+    mongodb:
+      host: dds-2ze7b96f7a145e241.mongodb.rds.aliyuncs.com
+      port: 3717
+      database: admin
+      username: root
+      password: Beebee@pro@456
+
+# first 数据源配置
+first:
+  datasource:
+    name: user-first
+    url: jdbc:mysql://rm-2ze1435lmf3vg8335.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+# second 数据源配置
+second:
+  datasource:
+    name: user-second
+    url: jdbc:mysql://rr-2zeu7gjta385rei35.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+# third 数据源配置
+third:
+  datasource:
+    name: user-third
+    url: jdbc:mysql://rr-2ze06920g05u6j3dd.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee
+    password: Beebee@pro@456
+
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.16.9.232:8761/eureka
+  instance:
+    prefer-ip-address: true # 在管控台URL的显示，默认是false
+    instance-id: ${spring.application.name}:${spring.cloud.client.ipAddress}:${spring.application.instance_id:${server.port}} # 管控台显示
+    metadata-map:
+      zone: ABC      # eureka可以理解的元数据
+      lilizhou: BBC  # 不会影响客户端行为
+    lease-renewal-interval-in-seconds: 5
+
+---
+server:
+  port: 10331
+thrift:
+  server:
+    port: 10341
+spring:
+  profiles: user-server1
+---
+server:
+  port: 10332
+thrift:
+  server:
+    port: 10342
+spring:
+  profiles: user-server2
+---
+server:
+  port: 10333
+thrift:
+  server:
+    port: 10343
+spring:
+  profiles: user-server3
+
+# 解决第一次请求报超时异常的方案：
+# hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 5000
+# 或者：
+# hystrix.command.default.execution.timeout.enabled: false
+# 或者：
+#feign.hystrix.enabled: false # 索性禁用feign的hystrix支持

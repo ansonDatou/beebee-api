@@ -1,0 +1,49 @@
+#spring:
+#  profiles:
+#    active: test  # 环境 dev|test|pro
+
+
+
+# 正式服务器 ------------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: beebee-third-service-thrift-provider-client
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.16.9.232:8761/eureka
+  instance:
+    prefer-ip-address: true
+beebee-common-service-thrift-provider-client: # 服务提供者的名称
+  ribbon:
+    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+
+---
+server:
+  port: 8721
+thrift:
+  server:
+    host: localhost
+    port: 8741
+spring:
+  profiles: third-client1
+---
+server:
+  port: 8722
+thrift:
+  server:
+    host: localhost
+    port: 8742
+spring:
+  profiles: third-client2
+---
+server:
+  port: 8723
+thrift:
+  server:
+    host: localhost
+    port: 8743
+spring:
+  profiles: third-client3

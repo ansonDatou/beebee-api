@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quwan.beebee.dao.UserDao">
+
+	<!-- 一对多，兑换记录 -->
+	<resultMap id="orderAndGoodsList" type="com.quwan.beebee.resp.user.OrderListResp">
+		<id column="id" property="id" />
+		<id column="amount" property="amount" />
+		<id column="sn" property="sn" />
+		<id column="phone" property="phone" />
+		<id column="addTime" property="addTime" />
+		<id column="status" property="status" />
+		<id column="address" property="address" />
+		<collection property="goodsList" ofType="com.quwan.beebee.resp.user.GoodsOrderResp">
+			<result column="orderId" property="orderId" />
+			<result column="goodsId" property="goodsId" />
+			<result column="goodsPrice" property="goodsPrice" />
+			<result column="goodsNumber" property="goodsNumber" />
+			<result column="goodsName" property="goodsName" />
+			<result column="goodsImg" property="goodsImg" />
+		</collection>
+	</resultMap>
+	
+	<resultMap id="userPersonalPageResp" type="com.quwan.beebee.resp.user.UserPersonalPageResp">
+		<id column="userId" property="userId" />
+		<result column="head" property="head" />
+		<result column="sex" property="sex" />
+		<result column="age" property="age" />
+		<result column="nicker" property="nicker" />
+		<result column="signature" property="signature" />
+		<result column="partTopics" property="partTopics" />
+		<result column="startTopics" property="startTopics" />
+		<result column="archComments" property="archComments" />
+		<collection property="identityList" ofType="com.quwan.beebee.entity.user.UserIdentity">
+			<result column="id" property="id" />
+			<result column="identity" property="identity" />
+			<result column="color" property="color" />
+			<result column="is_hide" property="isHide" />
+		</collection>
+	</resultMap>
+	
+	<!-- 注册用户 -->
+	<insert id="registerUser" parameterType="com.quwan.beebee.param.user.RegisterParam" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO bb_user (pwd, uname, mobile,deviceid, devicetype, addtime) 
+		VALUES (#{param.pwd}, #{param.mobile}, #{param.mobile}, #{param.deviceId}, #{param.deviceType}, #{param.addTime})
+	</insert>
+
+	<!-- 通过手机号查询用户是否已存在 -->
+	<select id="getUserByMobile" parameterType="com.quwan.beebee.param.user.RegisterParam" resultType="java.lang.Integer">
+		SELECT id FROM bb_user WHERE mobile = #{param.mobile}
+	</select>
+
+	<!-- 通过手机号查询user -->
+	<select id="getUserByPhone" parameterType="java.lang.String" resultType="com.quwan.beebee.entity.user.User">
+		SELECT * FROM bb_user WHERE mobile = #{mobile}
+	</select>
+
+	<!-- 登录后更新用户信息 -->
+	<update id="updateForLogin" parameterType="com.quwan.beebee.entity.user.User">
+		UPDATE bb_user SET loginip = #{user.loginIp}, logintime = #{user.loginTime}
+		WHERE mobile = #{user.mobile}
+		<if test="user.deviceId != null and user.deviceId != '' "> 
+			and deviceid = #{user.deviceId} 
+		</if>
+		<if test="user.deviceType != null"> 
+			and devicetype = #{user.deviceType} 
+		</if>
+	</update>
+
+	<!-- 通过userId获取User -->
+	<select id="getDetail" parameterType="java.lang.Integer" resultType="com.quwan.beebee.entity.user.User">
+		SELECT * FROM bb_user WHERE id = #{userId}
+	</select>
+
+	<!-- 获取用户历史浏览记录的总数 -->
+	<!-- <select id="getHistoryTotal" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT t1.arch_id) FROM bb_user_archives_read_log t1
+		JOIN bb_archives_v2 t2 ON t1.arch_id = t2.id
+		WHERE t1.user_id = #{userId}
+	</select> -->
+
+	<!-- 获取用户历史浏览记录 -->
+	<!-- <select id="getHistoryArchives" parameterType="com.quwan.beebee.param.user.HistoryArchivesParam"
+		resultType="com.quwan.beebee.resp.user.HistoryArchivesResp">
+		SELECT t1.id, t1.cat1, t1.click, t1.comment, t1.imgurl,DATE_FORMAT(t1.pubtime  ,'%Y-%c-%d %H:%i:%s') AS pubtime ,
+		t1.source, t1.sourcetype, t1.keywords, t1.title, t1.videourl
+		FROM bb_archives_v2 t1 JOIN bb_user_archives_read_log t2 ON t1.id = t2.arch_id
+		WHERE t2.user_id = #{param.userId}
+		GROUP BY t2.arch_id
+		ORDER BY t1.id DESC
+		LIMIT #{param.pageNumber}, #{param.pageSize}
+	</select> -->
+	
+	<!-- 获取用户历史浏览记录  MongoDB @李静 -->
+	<select id="getHistoryReadLog" parameterType="com.quwan.beebee.mongo.UserReadLog" resultType="com.quwan.beebee.resp.user.HistoryArchivesResp">
+		SELECT id, cat1, click, comment, imgurl,DATE_FORMAT(pubtime  ,'%Y-%c-%d %H:%i:%s') AS pubtime ,
+		source, sourcetype, keywords, title, videourl
+		FROM bb_archives_v2 t1 
+		WHERE id in
+		<foreach collection="list" open="(" close=")" item="userReadLog" separator=",">
+			<if test="userReadLog.type == 0">
+				#{userReadLog.archId}
+			</if>
+		</foreach>
+		ORDER BY id DESC
+		LIMIT #{param.pageNumber}, #{param.pageSize}
+	</select>
+
+	<!-- 获取用户历史浏览记录的总数 -->
+	<select id="getHistoryReadLogTotal" parameterType="com.quwan.beebee.mongo.UserReadLog" resultType="java.lang.Integer">
+		SELECT COUNT(id) FROM bb_archives_v2
+		WHERE id in
+		<foreach collection="list" open="(" close=")" item="userReadLog" separator=",">
+			<if test="userReadLog.type == 0">
+				#{userReadLog.archId}
+			</if>
+		</foreach>
+	</select> 
+	
+	<!-- 用户修改密码 -->
+	<update id="modifyPwd" parameterType="com.quwan.beebee.param.user.ModifyPwdParam">
+		UPDATE bb_user SET pwd = #{param.pwd} WHERE id = #{param.userId}
+	</update>
+
+	<!-- 修改用户资料 -->
+	<update id="update" parameterType="com.quwan.beebee.entity.user.User">
+		UPDATE bb_user
+		<set>
+			<if test="nicker != null and nicker != '' "> 
+				nicker = #{nicker}, 
+			</if>
+			<if test="sex != null  and sex != 0 "> 
+				sex = #{sex}, 
+			</if>
+			<if test="birthday != null and birthday != '' "> 
+				birthday = #{birthday}, 
+				age = #{age}, 
+			</if>
+			<if test="region != null and region != '' "> 
+				region = #{region}, 
+			</if>
+			<if test="head != null and head != '' "> 
+				head = #{head} ,
+			</if>
+			<if test="signature != null and signature != '' "> 
+				signature = #{signature} ,
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 查询用户签到 -->
+	<select id="getSigned" resultType="com.quwan.beebee.entity.user.UserSigninLog">
+		SELECT id, user_id userId, signdate signDate, addtime addTime FROM bb_user_signin_log
+		WHERE user_id = #{userId} AND signate = #{currentDate}
+	</select>
+
+	<!-- 插入用户签到日志 -->
+	<insert id="addUserSigninLog" parameterType="com.quwan.beebee.entity.user.UserSigninLog">
+		INSERT INTO bb_user_signin_log (user_id, signdate, addtime) VALUES (#{userId}, #{signDate}, #{addTime})
+	</insert>
+
+	<!-- 获取积分列表 -->
+	<select id="getIntegralList" parameterType="com.quwan.beebee.param.user.IntegralListParam"
+		resultType="com.quwan.beebee.resp.user.UserIntegralLogResp">
+		SELECT * FROM bb_user_integral_log WHERE user_id = #{param.userId} AND ADDTIME >= DATE_SUB(DATE_FORMAT(NOW(),'%Y-%m-%d'), INTERVAL 1 WEEK)
+		ORDER BY addtime DESC LIMIT #{param.pageNumber}, #{param.pageSize}
+	</select>
+
+	<!-- 获取积分列表，总数 -->
+	<select id="getIntegralListTotal" parameterType="com.quwan.beebee.param.user.IntegralListParam" resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM bb_user_integral_log
+		WHERE user_id = #{param.userId} AND ADDTIME >= DATE_SUB(date_format(now(),'%Y-%m-%d'), INTERVAL 1 WEEK)
+	</select>
+
+	<!-- 更新用户头像-陈晓婵-2017年12月22日15:32:52 -->
+	<update id="updateHead" parameterType="com.quwan.beebee.param.user.UpdateHeadParam">
+		UPDATE bb_user SET head = #{param.data} WHERE id = #{param.userId}
+	</update>
+
+	<!-- 查询用户是否开启权限-陈晓婵-2017年12月22日18:15:38 -->
+	<select id="getSwitch" parameterType="com.quwan.beebee.param.user.SetwitchParam" resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM bb_user_switch WHERE
+		user_id = #{param.userId} AND type = #{param.type}
+	</select>
+
+	<!-- 对用户开启权限-陈晓婵-2017年12月22日18:22:16 -->
+	<insert id="setWitch" parameterType="com.quwan.beebee.param.user.SetwitchParam">
+		INSERT INTO bb_user_switch(user_id, type, valid) VALUES (#{param.userId}, #{param.type}, #{param.valid})
+	</insert>
+
+	<!-- 更新用户权限-陈晓婵-2017年12月22日18:24:37 -->
+	<update id="updateWitch" parameterType="com.quwan.beebee.param.user.SetwitchParam">
+		UPDATE bb_user_switch SET valid = #{param.valid}
+		WHERE user_id = #{param.userId} AND type = #{param.type}
+	</update>
+
+	<!-- 查询我的收藏 -->
+	<select id="getCollectionList" parameterType="com.quwan.beebee.param.user.CollectionParam"
+		resultType="com.quwan.beebee.resp.user.CollectionResp">
+		SELECT DATE_FORMAT(t1.modtime  ,'%Y-%c-%d %H:%i:%s') AS modTime,t2.id, t2.click, t2.comment, t2.collection, t2.title, t2.imgurl largePic,
+	    DATE_FORMAT(t2.pubtime  ,'%Y-%c-%d %H:%i:%s') AS pubtime, t2.source, t2.keywords, t2.videourl videoUrl, t2.cat1, t2.sourcetype sourceType
+		FROM bb_archives_v2_collection t1
+		JOIN bb_archives_v2 t2 ON t1.arch_id = t2.id
+		WHERE t1.user_id = #{userId} AND t1.valid = 1
+		ORDER BY t1.modtime DESC
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+
+	<!-- 我的收藏的总数 -->
+	<select id="getCollectionListTotal" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(id) FROM bb_archives_v2_collection WHERE user_id = #{userId} AND valid = 1
+	</select>
+
+	<!-- 获取商品列表 -->
+	<select id="getGoodsList" parameterType="com.quwan.beebee.param.user.GoodsListParam"
+			resultType="com.quwan.beebee.resp.user.GoodsListResp">
+		SELECT id, name, price, number, listpic listPic FROM bb_goods
+		WHERE deleted = 0 AND onsale = 1 ORDER BY order_index, addtime DESC
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+
+	<!-- 获取商品列表总数 -->
+	<select id="getGoodsListTotal" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(id) FROM bb_goods WHERE deleted = 0 AND onsale = 1
+	</select>
+
+	<!-- 获取商品详情 -->
+	<select id="getGoodsDetail" parameterType="int" resultType="com.quwan.beebee.resp.user.GoodsDetailResp">
+		SELECT id, name, price, orgPrice, number, listPic, pic1, pic2, pic3, pic4, detail, '购买须知' buyroles
+		FROM bb_goods WHERE id = #{goodsId} LIMIT 1
+	</select>
+
+	<!-- 获取兑换记录列表 -->
+	<select id="getOrderList" parameterType="com.quwan.beebee.param.user.OrderListParam" resultMap="orderAndGoodsList">
+		select t1.id, t1.amount, t1.sn, t1.phone, t1.addtime addTime, t1.status, t1.address, t1.consignee,
+		t2.order_id orderId, t2.goods_id goodsId, t2.goods_price goodsPrice, t2.goods_number goodsNumber,
+		t2.goods_name goodsName, t2.goods_img goodsImg
+		FROM bb_order t1
+		LEFT JOIN bb_order_goods t2 ON t1.id = t2.order_id
+		WHERE t1.user_id = #{userId}
+		ORDER BY t1.addtime DESC
+		LIMIT #{pageNumber}, #{pageSize}
+	</select>
+
+	<!-- 获取兑换记录总数 -->
+	<select id="getOrderListTotal" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(id) FROM bb_order WHERE user_id = #{userId}
+	</select>
+
+	<!-- 获取订单详情 -->
+	<select id="getOrderDetail" parameterType="int" resultMap="orderAndGoodsList">
+		SELECT t1.id, t1.amount, t1.sn, t1.phone, t1.addtime addTime, t1.status, t1.address, t1.consignee,
+		t2.order_id orderId, t2.goods_id goodsId, t2.goods_price goodsPrice, t2.goods_number goodsNumber,
+		t2.goods_name goodsName, t2.goods_img goodsImg
+		FROM bb_order t1
+		LEFT JOIN bb_order_goods t2 ON t1.id = t2.order_id
+		WHERE t1.id = #{orderId}
+		ORDER BY t1.addtime DESC
+	</select>
+
+	<!-- 系统通知-陈晓婵-2017年12月23日11:10:14 -->
+	<select id="getNotificationList" parameterType="com.quwan.beebee.param.user.NotificationParam"
+		resultType="com.quwan.beebee.resp.user.NotificationListResp">
+		SELECT title, content, addtime addTime FROM bb_notification WHERE FIND_IN_SET(#{param.userId},user_ids)
+	</select>
+
+	<!-- 系统通知total-陈晓婵-2017年12月23日15:27:08 -->
+	<select id="getNotificationListTotal" parameterType="com.quwan.beebee.param.user.NotificationParam"
+		resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM bb_notification WHERE FIND_IN_SET (#{param.userId},user_ids)
+	</select>
+
+	<!-- 我的评论-陈晓婵-2017年12月23日14:30:26 -->
+	<!-- <select id="getMineCommentList" parameterType="com.quwan.beebee.param.user.NotificationParam"
+		resultType="com.quwan.beebee.resp.topic.TopicCommentResp">
+		SELECT c.`addtime`,c.`content`,c.`id`,c.`parent_id`,c.`parent_user_id`,c.`praise`,c.`replieridentity`,c.`topic_id`,
+		c.`user_id`, u.`head`,u.`nicker`
+		FROM bb_topic_comment c
+		LEFT JOIN bb_user u ON c.`user_id` = u.`id`
+		WHERE c.`user_id`= #{param.userId} ORDER BY  c.`addtime` DESC
+		LIMIT #{param.pageNumber},#{param.pageSize}
+	</select> -->
+	<!-- 我的评论-李静- -->
+	<select id="getMineCommentList" parameterType="com.quwan.beebee.param.user.NotificationParam"
+		resultType="com.quwan.beebee.resp.user.MineCommentResp">
+		SELECT ta.* from 
+		(SELECT c.`addtime` addTime, c.`content`, c.`id`, c.`parent_id` parentId, c.`parent_user_id` parentUserId,
+				c.`praise`, c.`replieridentity` replierIdentity,
+				c.`topic_id` sourceId, 1 as type, 
+				c.`user_id` userId, u.`head`, u.`nicker`
+				FROM bb_topic_comment c
+				LEFT JOIN bb_user u ON c.`user_id` = u.`id`
+				WHERE c.`user_id`= #{param.userId} 
+		UNION
+		SELECT ac.`addtime` addTime, ac.`content`, ac.`id`, ac.`parent_id` parentId, ac.`parent_user_id` parentUserId,
+				0 as praise, '' as replierIdentity, ac.`arch_id` sourceId, 0 as type, 
+				ac.`user_id` userId, u.`head`,u.`nicker`
+				FROM bb_archives_v2_comment ac
+				LEFT JOIN bb_user u ON ac.`user_id` = u.`id`
+				WHERE ac.`user_id`= #{param.userId} 
+				) ta
+		ORDER BY ta.addtime DESC
+		LIMIT #{param.pageNumber},#{param.pageSize}
+	</select>
+
+	<!-- 我的评论-陈晓婵-2017年12月23日15:31:54 -->
+	<select id="getMineCommentListTotal" parameterType="com.quwan.beebee.param.user.NotificationParam"
+			resultType="java.lang.Integer">
+		SELECT count(*) from 
+		(SELECT c.`addtime` addTime, c.`content`, c.`id`, c.`parent_id` parentId, c.`parent_user_id` parentUserId,
+				c.`praise`, c.`replieridentity` replierIdentity,
+				c.`topic_id` sourceId, 1 as type, 
+				c.`user_id` userId, u.`head`, u.`nicker`
+				FROM bb_topic_comment c
+				LEFT JOIN bb_user u ON c.`user_id` = u.`id`
+				WHERE c.`user_id`= #{param.userId} 
+		UNION
+		SELECT ac.`addtime` addTime, ac.`content`, ac.`id`, ac.`parent_id` parentId, ac.`parent_user_id` parentUserId,
+				0 as praise, '' as replierIdentity, ac.`arch_id` sourceId, 0 as type, 
+				ac.`user_id` userId, u.`head`,u.`nicker`
+				FROM bb_archives_v2_comment ac
+				LEFT JOIN bb_user u ON ac.`user_id` = u.`id`
+				WHERE ac.`user_id`= #{param.userId} 
+				) ta
+	</select>
+
+	<!-- 兑换商品-陈晓婵-2017年12月23日17:25:18 -->
+	<insert id="exchange" parameterType="com.quwan.beebee.param.user.ExchangeParam" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO bb_order(user_id,address,consignee,status,amount,sn) VALUES
+		(#{param.userId}, #{param.address}, #{param.consignee}, 2, #{param.amount}, #{param.sn})
+	</insert>
+
+	<!-- 查询goodsInfo-陈晓婵-2017年12月23日18:28:02 -->
+	<select id="getGoodsInfo" parameterType="Integer" resultType="com.quwan.beebee.resp.user.ExchangeResp">
+		SELECT id, order_id orderId, goods_id goodsId, goods_name goodsName, goods_price goodsPrice,
+		 goods_number goodsNumber, goods_img pic1, goods_purchase_price  goodsPurchase
+		 FROM bb_order_goods WHERE id = #{value}
+	</select>
+
+	<!-- 兑换商品-陈晓婵-2017年12月23日18:25:32 -->
+	<insert id="insertOrderGoods" parameterType="com.quwan.beebee.resp.user.ExchangeResp">
+		INSERT INTO bb_order_goods(order_id, goods_id, goods_name, goods_price, goods_number, goods_img, goods_purchase_price)
+		VALUES(#{param.orderId}, #{param.goodsId}, #{param.goodsName}, #{param.goodsPrice}, #{param.goodsNumber},
+		#{param.pic1}, #{param.goodsPurchase})
+	</insert>
+
+	<!-- 登陆获取用户信息-陈晓婵-2018年1月12日10:55:40 -->
+	<select id="getUserInfo" parameterType="java.lang.String" resultType="com.quwan.beebee.resp.user.UserInfoResp">
+		SELECT id,nicker,head,integral,signature FROM bb_user WHERE mobile=#{mobile}
+	</select>
+
+	<!-- 更新用户的积分字段-陈晓婵-2018年1月12日11:38:34 -->
+	<update id="updateIntegral" parameterType="com.quwan.beebee.param.user.UpdateIntegralParam">
+		UPDATE bb_user SET integral =#{param.integral} WHERE id=#{param.userId}
+	</update>
+	
+	<!-- 保存用户积分  @lijing -->
+	<insert id="saveUserIntegral" parameterType="com.quwan.beebee.mongo.UserIntegral">
+		INSERT  INTO bb_user_integral (user_id, current, total, today, themonth, theweek 
+		, readdays ,modtime, todayread, signindays, todaysignin ) VALUES
+	        (#{param.userId}, #{param.integral}, #{param.total}, #{param.today}
+	        , #{param.theMonth}, #{param.theWeek}, #{param.readDays}, #{param.modTime}, 
+	        #{param.todayRead}, #{param.signInDays}, #{param.todaySignIn})
+		ON DUPLICATE KEY UPDATE current = #{param.integral}, total = #{param.total},
+		today = #{param.today}, themonth = #{param.theMonth}, theweek = #{param.theWeek}
+		, readdays = #{param.readDays}, modtime = #{param.modTime}, todayread = #{param.todayRead}
+		, signindays = #{param.signInDays}, todaysignin = #{param.todaySignIn}, perfectdata = #{param.perfectData}
+		, pushed = #{param.pushed}, located = #{param.located}, addresslist = #{param.addressList}
+	</insert>
+	
+	<!-- 获取用户当天的评论文章的个数-陈晓婵-2018年1月8日15:56:28 -->
+	<select id="getArchivesCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_comment WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取用户当天的评论哔哔的个数-陈晓婵-2018年1月8日15:58:32 -->
+	<select id="getTopicCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_topic_comment WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 判断今天是否回复别人的评论-陈晓婵-2018年1月8日19:33:26 -->
+	<select id="getCommentAnswer" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_comment_answer WHERE user_id_answer=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+	
+	<!-- 获取文章转发数量-陈晓婵-2018年1月6日17:01:36-->
+	<select id="getArchiShareCount" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_share WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取活动转发数量-陈晓婵-2018年1月6日17:01:47 -->
+	<select id="getTopicShareCount" resultType="int">
+		SELECT COUNT(*) FROM bb_topic_share WHERE user_id =#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取用户最近一周的签到日志-陈晓婵-2018年1月16日19:30:24 -->
+	<select id="getUserSignLog" resultType="int">
+		SELECT * FROM bb_user_signin_log WHERE user_id=#{userId} AND signdate >=DATE_SUB(DATE_FORMAT(NOW(),'%Y-%m-%d'), INTERVAL 1 WEEK)
+	</select>
+	
+	<!--  插入用户积分日志-陈晓婵-2018年1月17日21:10:12 -->
+	<insert id="insertIntegralLog" parameterType="com.quwan.beebee.resp.user.UserIntegralLogResp">
+		INSERT INTO bb_user_integral_log (user_id,integral,type,title,typedesc,typeid) VALUES (#{param.userId},#{param.integral},#{param.type},#{param.title},#{param.typeDesc},#{param.typeId})
+	</insert>
+	
+	<!-- 查询bb_user表中的用户id-陈晓婵-2018e年1月18日15:24:30 -->
+	<select id="getUserId" resultType="com.quwan.beebee.param.user.GetTaskListParam">
+		SELECT id FROM bb_user
+	</select>
+	
+	<!-- 根据用户id查询积分详情-陈晓婵-2018年1月18日15:48:18 -->
+	<select id="getUserIntegralDetail" parameterType="com.quwan.beebee.param.user.GetTaskListParam" resultType="com.quwan.beebee.resp.user.UserIntegralMoveResp">
+		SELECT signindays,todaysignin,readdays,todayread,perfectdata,pushed,located,addresslist FROM bb_user_integral WHERE user_id=#{param.userId}
+	</select>
+	
+	<!--  插入用户身份  - 李静  -->
+	<insert id="addUserIdentity" parameterType="com.quwan.beebee.entity.user.UserIdentity">
+		<selectKey resultType="int" order="AFTER" keyProperty="id">
+          SELECT LAST_INSERT_ID()
+      	</selectKey>
+		INSERT INTO bb_user_identity (user_id,identity,color) 
+		VALUES (#{userId},#{identity},#{color})
+	</insert>
+	
+	<!-- 查询该身份是否已存在  - 李静-->
+	<select id="getIdentitys" parameterType="com.quwan.beebee.entity.user.UserIdentity" resultType="com.quwan.beebee.entity.user.UserIdentity">
+		SELECT * FROM bb_user_identity 
+		WHERE user_id = #{userId} and identity = #{identity}
+	</select>
+
+	<!-- 插入红包 -->
+	<insert id="insertRedPacket" parameterType="java.lang.Integer">
+		INSERT INTO bb_red_packet_operate (user_id, money, receive_status,check_status)
+		VALUES (#{userId}, #{money}, 0, 0)
+	</insert>
+
+	<!-- 判断红包是否领取 -->
+	<select id="checkRedPacket" parameterType="com.quwan.beebee.param.user.RedPacketParam" resultType="com.quwan.beebee.resp.user.RedPacketResp">
+		SELECT id, money, type, url FROM bb_red_packet
+		WHERE money = #{money} and type = #{type}
+	</select>
+
+
+
+
+	<!-- 查询个人主页 用户信息  - 李静-->
+	<select id="getUserPersonalPage" parameterType="com.quwan.beebee.param.user.UserPersonalPageParam" resultMap="userPersonalPageResp">
+		SELECT u.id userId, u.head, u.sex , u.age, u.nicker, u.signature ,
+		ui.id id , ui.identity, ui.color, ui.is_hide, count(tc.id) comment,
+		(SELECT count(t.id)
+		FROM bb_topic t
+		LEFT JOIN bb_topic_comment tc  ON t.id = tc.topic_id
+		LEFT JOIN bb_user u ON tc.user_id = u.id 
+		LEFT JOIN bb_user_identity ui  ON tc.user_id = ui.user_id and tc.identity_id = ui.id
+		<if test="userId != targetUserId">
+			and ui.is_hide = 0
+		</if>
+		WHERE u.id = #{targetUserId})+(SELECT count(t.id)
+		FROM bb_topic t
+		LEFT JOIN bb_topic_option_vote tov ON t.id = tov.topic_id
+		LEFT JOIN bb_user u ON tov.user_id = u.id 
+		WHERE u.id = #{targetUserId}) partTopics,
+		(SELECT count(*)
+		FROM bb_topic t
+		LEFT JOIN bb_user u ON t.adduserid = u.id
+		WHERE u.id = #{targetUserId}) startTopics,
+		(SELECT count(a.id)
+		from bb_archives_v2_comment ac
+		LEFT JOIN bb_archives_v2 a ON ac.arch_id = a.id
+		LEFT JOIN bb_user u ON ac.user_id = u.id
+		WHERE u.id = #{targetUserId})+
+		(SELECT count(a.id)
+		FROM bb_archives_comment_answer aca
+		LEFT JOIN bb_archives_comment ac ON ac.id = aca.arch_comm_id
+		LEFT JOIN bb_archives_v2 a ON a.id = aca.arch_id
+		LEFT JOIN bb_user u ON u.id = ac.user_id
+		WHERE aca.user_id_answer = #{targetUserId}) archComments
+		FROM bb_user  u
+		LEFT JOIN bb_user_identity ui ON u.id = ui.user_id 
+		<if test="userId != targetUserId">
+			and ui.is_hide = 0
+		</if>
+		LEFT JOIN bb_topic_comment tc ON tc.identity_id = ui.id
+		WHERE u.id = #{targetUserId}
+		GROUP BY ui.id
+    	ORDER BY comment DESC, ui.addtime ASC
+	</select>
+	
+	<!-- 更新用户所有身份显示  - 李静-->
+	<update id="displayUserIdentitys" parameterType="int">
+		UPDATE bb_user_identity SET is_hide = 0 WHERE user_id = #{userId}
+	</update>
+	
+	<!-- 隐藏用户身份  - 李静-->
+	<update id="hideUserIdentitys">
+		UPDATE bb_user_identity SET is_hide = 1
+		where id in 
+		<foreach collection="array" index="index" item="identityId"
+            open="(" separator="," close=")">
+            #{identityId}
+        </foreach>
+	</update>
+	
+	<!-- 根据用户id和身份id查询参与的哔哔  - 李静 -->
+	<select id="getCommentsByUserIdentity" parameterType="com.quwan.beebee.param.user.GetCommentsByUserIdentityParam"
+		 resultType="com.quwan.beebee.resp.user.GetCommentsByUserIdentityResp">
+		SELECT t.id topicId, t.title, t.img imgUrl, tc.praise, tc.addtime pubTime
+		FROM bb_topic t
+		LEFT JOIN bb_topic_comment tc ON t.id = tc.topic_id
+		LEFT JOIN bb_user_identity ui ON tc.identity_id = ui.id
+		WHERE tc.user_id =#{targetUserId}  AND ui.id = #{identityId}
+		ORDER BY tc.addtime DESC
+		LIMIT #{pageNumber},#{pageSize}
+	</select>
+	
+	<!-- 根据用户id和身份id查询参与的哔哔 总数  - 李静 -->
+	<select id="getCommentsByUserIdentityTotal" parameterType="com.quwan.beebee.param.user.GetCommentsByUserIdentityParam"
+		 resultType="int">
+		SELECT count(*)
+		FROM bb_topic t
+		LEFT JOIN bb_topic_comment tc ON t.id = tc.topic_id
+		LEFT JOIN bb_user_identity ui ON tc.identity_id = ui.id
+		WHERE tc.user_id =#{targetUserId}  AND ui.id = #{identityId}
+	</select>
+	
+	<!-- 查询 个人主页 - 参与的哔哔  - 李静 -->
+	<select id="getParticipateTopics" parameterType="com.quwan.beebee.param.user.UserDynamicParam" 
+		resultType="com.quwan.beebee.resp.user.UserDynamicResp">
+		SELECT t.* FROM 
+		(SELECT t.id, t.type, t.title, t.img, u.nicker, t.comment+t.praise participants,
+		ui.id identity_id , ui.identity, ui.color identityColor, tc.content, tc.addtime pubTime
+		FROM bb_topic_comment tc
+		LEFT JOIN  bb_topic t ON t.id = tc.topic_id
+		LEFT JOIN bb_user u ON tc.user_id = u.id 
+		LEFT JOIN bb_user_identity ui  ON tc.user_id = ui.user_id and tc.identity_id = ui.id
+		<if test="userId != targetUserId">
+			and ui.is_hide = 0
+		</if>
+		WHERE u.id = #{targetUserId}
+		UNION
+		SELECT t.id, t.type, t.title, t.img, u.nicker, t.comment+t.praise participants,
+		0 identity_id , '' identity, '' color, '' content, tov.addtime pubTime
+		FROM bb_topic t
+		LEFT JOIN bb_topic_option_vote tov ON t.id = tov.topic_id
+		LEFT JOIN bb_user u ON tov.user_id = u.id 
+		WHERE u.id =#{targetUserId}) t
+		ORDER BY t.pubTime DESC
+		LIMIT #{pageNumber},#{pageSize}
+	</select>
+	
+	<!-- 查询 个人主页 - 参与的哔哔 总数  - 李静 -->
+	<select id="getParticipateTopicTotal" parameterType="com.quwan.beebee.param.user.UserDynamicParam" resultType="int">
+		SELECT  
+		(SELECT count(t.id) 
+		FROM bb_topic_comment tc
+		LEFT JOIN bb_topic t ON t.id = tc.topic_id
+		LEFT JOIN bb_user u ON tc.user_id = u.id 
+		LEFT JOIN bb_user_identity ui  ON tc.user_id = ui.user_id and tc.identity_id = ui.id
+		<if test="userId != targetUserId">
+			and ui.is_hide = 0
+		</if>
+		WHERE u.id = #{targetUserId} )+
+		(SELECT count(t.id) 
+		FROM bb_topic t
+		LEFT JOIN bb_topic_option_vote tov ON t.id = tov.topic_id
+		LEFT JOIN bb_user u ON tov.user_id = u.id 
+		WHERE u.id = #{targetUserId})
+	</select>
+	
+	<!-- 查询 个人主页 - 发起的哔哔  - 李静 -->
+	<select id="getStartTopics" parameterType="com.quwan.beebee.param.user.UserDynamicParam" 
+		resultType="com.quwan.beebee.resp.user.UserDynamicCommentResp">
+		SELECT t.id, t.type, t.title, t.img, u.nicker, 
+		t.comment+t.praise participants, t.addtime pubTime
+		FROM bb_topic t
+		LEFT JOIN bb_user u ON t.adduserid = u.id
+		WHERE u.id = #{targetUserId}
+		ORDER BY t.addtime DESC
+		LIMIT #{pageNumber},#{pageSize}
+	</select>
+	
+	<!-- 查询 个人主页 - 发起的哔哔  总数 - 李静 -->
+	<select id="getStartTopicTotal" parameterType="com.quwan.beebee.param.user.UserDynamicParam" resultType="int">
+		SELECT count(*)
+		FROM bb_topic t
+		LEFT JOIN bb_user u ON t.adduserid = u.id
+		WHERE u.id = #{targetUserId}
+	</select>
+	
+	<!-- 查询 个人主页 - 回复  - 李静 -->
+	<select id="getComments" parameterType="com.quwan.beebee.param.user.UserDynamicParam" 
+		resultType="com.quwan.beebee.resp.user.UserDynamicCommentResp">
+		SELECT t.* FROM
+		(SELECT a.id, a.title, a.source, a.imgurl, a.`comment` ,a.collection, 
+		ac.addtime pubTime, ac.content, '' nicker , 0 type
+		from bb_archives_v2_comment ac
+		LEFT JOIN bb_archives_v2 a ON ac.arch_id = a.id
+		LEFT JOIN bb_user u ON ac.user_id = u.id
+		WHERE u.id = #{targetUserId}
+		UNION
+		SELECT a.id, a.title, a.source, a.imgurl, a.`comment` ,a.collection, 
+		aca.addtime pubTime, aca.content, u.nicker, 1 type 
+		FROM bb_archives_comment_answer aca
+		LEFT JOIN bb_archives_comment ac ON ac.id = aca.arch_comm_id
+		LEFT JOIN bb_archives_v2 a ON a.id = aca.arch_id
+		LEFT JOIN bb_user u ON u.id = ac.user_id
+		WHERE aca.user_id_answer = #{targetUserId}) t
+		ORDER BY t.pubTime DESC
+		LIMIT #{pageNumber},#{pageSize}
+	</select>
+	
+	<!-- 查询 个人主页 - 回复 总数 - 李静 -->
+	<select id="getCommentTotal" parameterType="com.quwan.beebee.param.user.UserDynamicParam" 
+		resultType="int">
+		SELECT 
+		(SELECT count(a.id)
+		from bb_archives_v2_comment ac
+		LEFT JOIN bb_archives_v2 a ON ac.arch_id = a.id
+		LEFT JOIN bb_user u ON ac.user_id = u.id
+		WHERE u.id = #{targetUserId})+
+		(SELECT count(a.id)
+		FROM bb_archives_comment_answer aca
+		LEFT JOIN bb_archives_comment ac ON ac.id = aca.arch_comm_id
+		LEFT JOIN bb_archives_v2 a ON a.id = aca.arch_id
+		LEFT JOIN bb_user u ON u.id = ac.user_id
+		WHERE aca.user_id_answer = #{targetUserId})
+	</select>
+
+	<!-- 根据用户id统计积分-陈晓婵-2018年2月7日14:55:42 -->
+	<select id="getUserIntegralById" parameterType="java.lang.Integer" resultType="int">
+		SELECT IFNULL(SUM(integral), 0) FROM bb_user_integral_log WHERE user_id= #{userId}
+	</select>
+
+	<select id="getBlacklist" parameterType="com.quwan.beebee.param.user.BlacklistParam" resultType="java.lang.Integer">
+		SELECT id FROM bb_user_blacklist WHERE user_id = #{userId} AND black_user_id = #{blackUserId}
+	</select>
+
+	<insert id="addBlacklist" parameterType="com.quwan.beebee.param.user.BlacklistParam">
+		INSERT INTO bb_user_blacklist (user_id, black_user_id, black_user_nickname) VALUE (#{userId}, #{blackUserId}, #{blackUserNickname})
+	</insert>
+
+	<delete id="removeBlackList" parameterType="com.quwan.beebee.param.user.BlacklistParam">
+		DELETE FROM bb_user_blacklist WHERE user_id = #{userId} AND black_user_id = #{blackUserId}
+	</delete>
+
+	<select id="getBlackList" parameterType="java.lang.Integer" resultType="com.quwan.beebee.resp.user.UserBlackResp">
+		SELECT id, user_id userId, black_user_id blackUserId, black_user_nickname nickName, addtime
+		FROM bb_user_blacklist WHERE user_id = #{userId}
+	</select>
+
+	<select id="getBlackListTotal" parameterType="com.quwan.beebee.param.user.NotificationParam" resultType="java.lang.Integer">
+		SELECT count(*) FROM bb_user_blacklist WHERE user_id = #{userId}
+	</select>
+</mapper>

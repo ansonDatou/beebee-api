@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: beebee-topic-thrift-provider-client
+
+server:
+  port: 10221
+
+thrift:
+  server:
+    host: localhost
+    port: 10241
+
+# 禁止自动注册eureka，仅dev模式使用
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false

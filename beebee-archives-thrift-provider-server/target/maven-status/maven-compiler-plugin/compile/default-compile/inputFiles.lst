@@ -1,0 +1,9 @@
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/config/RedisCacheConfig.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/design/pattern/Comment.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/design/pattern/ReplyTwoComment.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/design/pattern/ArchivesComment.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/design/pattern/Context.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/ArchivesThriftProviderServerApplication.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/design/pattern/ReplyComment.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/service/impl/ArchivesServiceImpl.java
+/software/workspace-quwan/beebee-api/beebee-archives-thrift-provider-server/src/main/java/com/quwan/beebee/config/ThriftConfig.java

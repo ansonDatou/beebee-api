@@ -1,0 +1,32 @@
+server:
+  port: 8882
+spring:
+  application:
+    name: beebee-kafka-consumer
+  cloud:
+     instance-count: 1
+     instance-index: 0
+     stream:
+        kafka:
+          binder:
+            brokers: localhost:9092
+            zk-nodes: localhost:2181
+            auto-add-partitions: true
+            auto-create-topics: true
+            min-partition-count: 1
+        bindings:
+          input:
+            destination: event-demo
+            group: s1
+            consumer:
+              autoCommitOffset: false
+              concurrency: 1
+              partitioned: false
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@localhost:8761/eureka
+  instance:
+    prefer-ip-address: true

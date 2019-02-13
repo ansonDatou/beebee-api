@@ -1,0 +1,9 @@
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/dao/UserDao.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/service/CommonManager.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/dao/TopicDao.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/service/impl/CommonManagerImpl.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/service/UserManager.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/dao/ThirdDao.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/service/impl/UserManagerImpl.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/dao/ArchivesDao.java
+/software/workspace-quwan/beebee-api/beebee-common-service/src/main/java/com/quwan/beebee/dao/CommonDao.java

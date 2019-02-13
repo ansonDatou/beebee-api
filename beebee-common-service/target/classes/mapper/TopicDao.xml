@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quwan.beebee.dao.TopicDao">
+	
+	<!-- 一对多，哔哔详情 -->
+    <resultMap id="topicDeteailVote" type="com.quwan.beebee.resp.topic.TopicDetailResp">
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="addtime" property="addTime"/>
+        <result column="img" property="img"/>
+        <result column="replieridentity" property="replierIdentity"/>
+        <result column="type" property="type"/>
+        <result column="multiselect" property="multiSelect"/>
+        <collection property="options" ofType="com.quwan.beebee.resp.topic.TopicVoteOptionResp">
+            <result column="id" property="id"/>
+            <result column="name" property="name"/>
+            <result column="total" property="total"/>
+            <result column="male" property="male"/>
+            <result column="female" property="feMale"/>
+            <result column="unknownsex" property="unKnownSex"/>
+            <result column="img" property="img"/>
+            <result column="order" property="order"/>
+        </collection>
+    </resultMap>
+
+    <!-- 给活动添加评论-陈晓婵-->
+    <insert id="addComment" parameterType="com.quwan.beebee.entity.topic.TopicComment">
+        INSERT INTO bb_topic_comment
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            topic_id, content, user_id, identity_id,
+            <if test="img !=null">
+                img,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            #{topicId}, #{content}, #{userId}, #{identityId},
+            <if test="img !=null">
+                #{img},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 同步活动表 评论数、今日评论数-何飞达 -->
+    <update id="syncTopicCommentCount1" parameterType="com.quwan.beebee.param.topic.TopicCommentParam">
+        UPDATE bb_topic a SET
+        a.comment = (SELECT count(*) FROM bb_topic_comment ac WHERE ac.topic_id = #{topicId} AND ac.pubtime <![CDATA[<=]]> CURRENT_TIMESTAMP()),
+        a.todaycomment = (SELECT count(*) FROM bb_topic_comment ac WHERE ac.topic_id = #{topicId} AND SYSDATE() > ac.addtime)
+        WHERE a.id = #{topicId}
+    </update>
+
+    <!-- 获取活动评论列表-陈晓婵 -->
+    <select id="getCommentList" parameterType="com.quwan.beebee.param.topic.TopicCommentListParam"
+            resultType="com.quwan.beebee.resp.topic.TopicCommentResp">
+        SELECT c.pubtime addTime, c.content, c.id, c.parent_id parentId,c.praise praise,c.parent_user_id parentUserId, c.img,
+        c.topic_id topicId, c.user_id userId,c.replieridentity replierID,u.head head,u.nicker nicker,ui.identity, ui.color identityColor,t.valid isParise
+        FROM bb_topic_comment c
+        LEFT JOIN bb_user u ON  c.user_id = u.id
+        LEFT JOIN bb_topic_comment_praise t ON c.id = t.topic_comment_id AND t.user_id=#{param.userId}
+        LEFT JOIN bb_user_identity ui  ON c.user_id = ui.user_id AND c.identity_id = ui.id
+        WHERE  c.topic_id= #{param.topicId} AND c.parent_id = 0 AND c.parent_user_id = 0 AND c.pubtime <![CDATA[<=]]> CURRENT_TIMESTAMP()
+        <if test="userIds != null and userIds.size() > 0">
+            AND c.user_id NOT IN
+            <foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.sort == 1 or param.sort == null or param.sort == ''">
+            ORDER BY addTime DESC
+        </if>
+        <if test="param.sort == 2">
+            ORDER BY c.praise DESC
+        </if>
+        LIMIT #{param.pageNumber},#{param.pageSize}
+    </select>
+
+	<!-- 获取活动评论总数  李静 -->
+    <select id="getCommentTotal" parameterType="com.quwan.beebee.param.topic.TopicCommentListParam" resultType="int">
+        SELECT count(*) AS totalCount 
+        FROM bb_topic_comment c
+        LEFT JOIN bb_user u ON c.`user_id` = u.`id`
+        WHERE topic_id=#{param.topicId}
+        <if test="userIds != null and userIds.size() > 0">
+            AND c.user_id NOT IN
+            <foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    
+    <!-- 根据id查询TopicComment实体-李静 -->
+    <select id="getTopicCommentById" parameterType="int" resultType="com.quwan.beebee.entity.topic.TopicComment">
+        SELECT topic_id topicId, user_id userId, content,replieridentity replierIdentity, parent_id parentId,
+        parent_user_id parentUserId, praise, addtime addTime
+        FROM bb_topic_comment WHERE id = #{id}
+    </select>
+
+    <!-- 添加活动评论回复-李静 -->
+    <insert id="addCommentReply" parameterType="com.quwan.beebee.entity.topic.TopicComment">
+        INSERT INTO bb_topic_comment
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            topic_id, content, user_id, parent_id, parent_user_id,
+            <if test="img !=null">
+                img,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            #{topicId}, #{content}, #{userId}, #{parentId}, #{parentUserId},
+            <if test="img !=null">
+                #{img},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 同步活动表 评论数、今日评论数-李静 -->
+    <update id="syncTopicCommentCount" parameterType="com.quwan.beebee.param.topic.TopicCommentReplyParam">
+        UPDATE bb_topic a SET
+        a.comment = (SELECT count(*) FROM bb_topic_comment ac WHERE ac.topic_id = #{topicId}),
+        a.todaycomment = (SELECT count(*) FROM bb_topic_comment ac WHERE ac.topic_id = #{topicId} AND SYSDATE() > ac.addtime)
+        WHERE a.id = #{topicId}
+    </update>
+
+    <!-- 查询评论回复条数-李静 -->
+    <select id="getCommentReplyTotal" parameterType="int" resultType="int">
+        SELECT COUNT(1) FROM bb_topic_comment t1
+        LEFT JOIN bb_user t2 ON t1.user_id = t2.id
+        LEFT JOIN bb_topic_comment_praise t ON t1.id = t.topic_comment_id AND t1.user_id = t.user_id
+        LEFT JOIN (select id from bb_topic_comment where parent_id = #{commentId}) t3 on t3.id = t1.parent_id
+	    WHERE t1.parent_id = t3.id OR t1.parent_id = #{commentId}
+    </select>
+
+    <!-- 查询评论回复列表-李静 -->
+    <select id="getCommentReplyList" parameterType="com.quwan.beebee.param.topic.TopicCommentReplyListParam"
+            resultType="com.quwan.beebee.resp.topic.TopicCommentReplyListResp">
+        SELECT t1.id, t1.user_id userId, t1.topic_id topicId, t1.parent_id parentId, t1.parent_user_id parentUserId,
+        t1.praise, t1.replieridentity replierIdentity, t1.addtime addTime, t1.content, t1.img, t2.nicker, t2.head,t.valid
+        FROM bb_topic_comment t1
+        LEFT JOIN bb_user t2 ON t1.user_id = t2.id
+        LEFT JOIN bb_topic_comment_praise t ON t1.id = t.topic_comment_id AND t1.user_id = t.user_id
+        LEFT JOIN (SELECT id FROM bb_topic_comment WHERE parent_id = #{commentId}) t3 ON t3.id = t1.parent_id
+	    WHERE t1.parent_id = t3.id OR t1.parent_id = #{commentId}
+        ORDER BY t1.addtime DESC
+        LIMIT #{pageNumber},#{pageSize}
+    </select>
+
+    <!-- 查询出所有列表内容 何飞达 -->
+    <select id="queryTopicList" parameterType="com.quwan.beebee.param.topic.TopicListParam" resultType="com.quwan.beebee.resp.topic.TopicResp">
+        SELECT t.id, t.type, t.title, t.content, t.img, DATE_FORMAT(t.addtime ,'%Y-%c-%d %H:%i:%s') AS addTime,
+        t.comment + t.praise people, DATE_FORMAT(t.pubtime ,'%Y-%c-%d %H:%i:%s') AS pubTime,
+        t.adduserid userId, t.replieridentity replierIdentity, u.nicker, u.head
+        FROM bb_topic t LEFT JOIN bb_user u ON t.adduserid = u.id
+        <where>
+            t.pubtime <![CDATA[<=]]> CURRENT_TIMESTAMP()
+            <if test="param.type == 1">
+                AND t.type = 1
+            </if>
+            <if test="param.type == 3">
+                AND t.type = 3
+            </if>
+            AND t.enable = 1 AND t.status = 1 AND t.deleted = 0
+            <if test="userIds != null and userIds.size() > 0">
+                AND t.adduserid NOT IN
+                <foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        <if test="param.sortType == 1 or param.sortType == null or param.sortType == ''">
+            ORDER BY t.pubtime DESC
+        </if>
+        <if test="param.sortType == 2">
+            ORDER BY people DESC
+        </if>
+        LIMIT #{param.pageNumber}, #{param.pageSize}
+    </select>
+
+    <!-- 查询所有内容的数量 何飞达 -->
+    <select id="queryTopicTotal" parameterType="com.quwan.beebee.param.topic.TopicListParam" resultType="int">
+        SELECT count(*) AS totalCount FROM bb_topic
+        WHERE pubtime <![CDATA[<=]]> CURRENT_TIMESTAMP() AND enable = 1 AND status = 1 AND deleted = 0
+        <if test="userIds != null and userIds.size() > 0">
+            AND adduserid NOT IN
+            <foreach collection="userIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.sortType == 1 or param.sortType == null or param.sortType == ''">
+            ORDER BY addtime DESC
+        </if>
+        <if test="param.sortType == 2">
+            ORDER BY click DESC
+        </if>
+    </select>
+
+    <!-- 获取活动详情 -->
+    <select id="getDetail" parameterType="com.quwan.beebee.param.topic.TopicDetailParam" resultType="com.quwan.beebee.resp.topic.TopicDetailResp">
+        SELECT id, content, DATE_FORMAT(addtime ,'%Y-%c-%d %H:%i:%s') AS addTime, title, img, replieridentity replierIdentity, type, multiselect multiSelect
+        FROM bb_topic WHERE id = #{topicId}
+    </select>
+
+    <!-- 获取哔哔投内容 -->
+    <select id="getVoteOption" parameterType="com.quwan.beebee.param.topic.TopicDetailParam" resultType="com.quwan.beebee.resp.topic.TopicVoteOptionResp">
+        SELECT id, name, male, female, unknownsex unKnownSex, total, img
+        FROM bb_topic_option WHERE topic_id = #{topicId}
+    </select>
+
+    <!-- 查询用户对于哔哔投票的记录 -->
+    <select id="getDeteailVotes" parameterType="com.quwan.beebee.param.topic.TopicDetailParam" resultType="int">
+        SELECT option_id  FROM bb_topic_option_vote WHERE user_id = #{userId} AND topic_id = #{topicId}
+    </select>
+	
+    <!-- 同步投票人个数 -->
+    <update id="synTopicOptionCount" parameterType="com.quwan.beebee.param.topic.TopicVoteParam">
+        UPDATE bb_topic_option SET total = total + 1 WHERE topic_id = #{topicId} AND id = #{option}
+    </update>
+
+    <!--同步投票人数活动表  -->
+    <update id="synTopicSex" parameterType="com.quwan.beebee.param.topic.TopicVoteParam">
+        UPDATE bb_topic
+        SET male = (SELECT SUM(male) male FROM bb_topic_option WHERE topic_id = #{topicId}),
+            female = (SELECT SUM(female) female FROM bb_topic_option WHERE topic_id = #{topicId}),
+            unknownsex = (SELECT SUM(unknownsex) unknownsex FROM bb_topic_option WHERE topic_id = #{topicId})
+        WHERE id = #{topicId}
+    </update>
+
+    <!-- 查询用户对活动的投票记录 -->
+    <select id="getTopicVote" parameterType="com.quwan.beebee.param.topic.TopicVoteParam" resultType="com.quwan.beebee.resp.topic.TopivVoteResp">
+        SELECT id, user_id userId, topic_id topicId, option_id optionId, sex, DATE_FORMAT(addtime,'%Y-%c-%d %H:%i:%s') AS addTime
+        FROM  bb_topic_option_vote
+        WHERE user_id = #{userId}
+        AND topic_id = #{topicId}
+    </select>
+
+    <!-- 获取投票人性别 何飞达 -->
+    <select id="getUseSex" parameterType="com.quwan.beebee.param.topic.TopicVoteParam" resultType="int">
+       SELECT sex FROM bb_user WHERE id = #{userId}
+    </select>
+
+    <!-- 活动投票 何飞达 -->
+    <insert id="addVote" parameterType="com.quwan.beebee.param.topic.TopicVoteParam">
+        INSERT INTO bb_topic_option_vote (user_id, topic_id, option_id, sex, addtime)
+        VALUES (#{userId}, #{topicId}, #{option}, 3, SYSDATE())
+    </insert>
+
+    <!-- 获取弹幕列表 何飞达 -->
+    <select id="getBarrageList" parameterType="com.quwan.beebee.param.topic.TopicBarrageListParam"
+            resultType="com.quwan.beebee.resp.topic.TopicBarrageListResp">
+        SELECT a.content content,c.nicker nicker, c.head head,FLOOR((RAND() * 3)) level
+        FROM bb_topic_comment a
+        LEFT JOIN bb_user c ON a.user_id = c.id WHERE a.topic_id = #{topicId}
+        ORDER BY a.addtime DESC
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <!-- 获取弹幕列表数量 何飞达 -->
+    <select id="getBarrageListTotal" parameterType="com.quwan.beebee.param.topic.TopicBarrageListParam" resultType="int">
+        SELECT COUNT(*) FROM bb_topic_comment a LEFT JOIN bb_user c ON a.user_id = c.id
+        WHERE a.topic_id = #{topicId}
+        ORDER BY a.addtime DESC
+    </select>
+
+    <!-- 按条件获取点赞记录 -->
+    <select id="getCommentPraiseId" parameterType="com.quwan.beebee.param.topic.TopicCommentPraiseParam" resultType="int">
+        SELECT id FROM bb_topic_comment_praise WHERE topic_comment_id = #{commentId} AND user_id = #{userId};
+    </select>
+
+    <!-- 增加评论点赞 -->
+    <insert  id="addCommentPraise"  parameterType="com.quwan.beebee.param.topic.TopicCommentPraiseParam">
+        INSERT INTO bb_topic_comment_praise (topic_comment_id, user_id, valid, modtime, addtime)
+        VALUES (#{commentId}, #{userId}, #{valid}, SYSDATE(), SYSDATE())
+    </insert>
+
+    <!-- 同步点赞记录 何飞达 -->
+    <update id="syncCommentPraise" parameterType="com.quwan.beebee.param.topic.TopicCommentPraiseParam">
+        UPDATE bb_topic_comment SET praise =
+        (SELECT COUNT(*) FROM bb_topic_comment_praise  WHERE topic_comment_id = #{commentId} AND valid = 1)
+        WHERE id = #{commentId}
+    </update>
+
+
+    <!-- 修改评论点赞状态 -->
+    <select id="updateCommentPraise" parameterType="com.quwan.beebee.param.topic.TopicCommentPraiseParam">
+        UPDATE bb_topic_comment_praise SET valid = #{valid}, modtime = SYSDATE() WHERE topic_comment_id = #{commentId}
+        AND user_id = #{userId}
+    </select>
+
+    <!-- 发起哔哔说 -->
+    <insert id="addTopicTalk" parameterType="com.quwan.beebee.param.topic.TopicParam" >
+        INSERT INTO bb_topic (title, content, type, adduserid, img, replieridentity, multiselect, addtime, enable, status, deleted)
+        VALUES (#{title}, #{content}, #{type}, #{userId}, #{img}, #{replierIdentity}, #{multiSelect}, SYSDATE(), 1, 1, 0)
+    </insert>
+
+    <!-- 发起哔哔投 -->
+    <insert id="addTopicThrow" parameterType="com.quwan.beebee.param.topic.TopicOptionParam">
+        INSERT INTO bb_topic_option(topic_id, name, male, female, unknownsex, total, img)
+        VALUES (#{topicId}, #{name}, 0, 0, 0, 0, #{img})
+    </insert>
+
+    <select id="getTopicList" parameterType="com.quwan.beebee.param.topic.TopicParam" resultType="com.quwan.beebee.resp.topic.TopicResp">
+        SELECT id, type, title, content, img, addTime FROM bb_topic WHERE adduserid = #{userId} AND title = #{title} ORDER BY bb_topic.addtime DESC;
+    </select>
+
+	<!-- 获取用户当天的评论文章的个数-陈晓婵-2018年1月8日15:56:28 -->
+	<select id="getArchivesCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_v2_comment
+		WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME, '%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 获取用户当天的评论哔哔的个数-陈晓婵-2018年1月8日15:58:32 -->
+	<select id="getTopicCommentCount" resultType="int">
+		SELECT COUNT(*) FROM bb_topic_comment
+		WHERE user_id=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+
+	<!-- 判断今天是否回复别人的评论-陈晓婵-2018年1月8日19:33:26 -->
+	<select id="getCommentAnswer" resultType="int">
+		SELECT COUNT(*) FROM bb_archives_comment_answer
+		WHERE user_id_answer=#{userId} AND DATE_FORMAT(ADDTIME,'%Y-%m-%d')=DATE_FORMAT(NOW(), '%Y-%m-%d')
+	</select>
+	
+	<!-- 根据类型查询热门推荐  李静-->
+    <select id="getHotRecommend" parameterType="String" resultType="com.quwan.beebee.resp.topic.TopicResp">
+        SELECT t.id, t.type, t.title, t.content, t.img, DATE_FORMAT(t.addtime ,'%Y-%c-%d %H:%i:%s') AS addTime,
+        t.male + t.female + t.unknownsex+ t.comment + t.praise people, DATE_FORMAT(t.pubtime ,'%Y-%c-%d %H:%i:%s') AS pubTime,
+        t.adduserid userId, t.replieridentity replierIdentity, u.nicker, u.head
+        FROM bb_topic t 
+        LEFT JOIN bb_user u ON t.adduserid = u.id
+        JOIN bb_topic_recommend tr ON t.id = tr.topic_id
+        WHERE tr.cat = #{cat}
+        ORDER BY tr.order
+    </select>
+    
+    <!--  插入用户积分日志-陈晓婵-2018年1月17日21:10:12 -->
+	<insert id="insertIntegralLog" parameterType="com.quwan.beebee.resp.user.UserIntegralLogResp">
+		INSERT INTO bb_user_integral_log (user_id,integral,type,title,typedesc,typeid)
+		VALUES (#{param.userId},#{param.integral},#{param.type},#{param.title},#{param.typeDesc},#{param.typeId})
+	</insert>
+
+    <!-- 获取发布哔哔说的用户 -->
+    <select id="getFramer" parameterType="int" resultType="int">
+        SELECT adduserid FROM bb_topic WHERE id = #{topicId}
+    </select>
+
+    <!-- 获取活动评论回复火热的三条 -->
+    <select id="getTopicCommentThreeList" parameterType="int" resultType="com.quwan.beebee.resp.topic.TopicCommentReplyThreeListResp">
+        SELECT t1.id, t1.user_id userId, t1.topic_id topicId, (SELECT COUNT(1) FROM bb_topic_comment WHERE parent_id = #{commentId}) + t1.praise people,
+        t1.content, t2.nicker, t2.head,t.valid FROM bb_topic_comment t1
+        LEFT JOIN bb_user t2 ON t1.user_id = t2.id
+        LEFT JOIN bb_topic_comment_praise t ON t1.id = t.topic_comment_id AND t1.user_id = t.user_id
+        LEFT JOIN (SELECT parent_id,count(id) comentCount from bb_topic_comment where parent_id = #{commentId}) tcc
+        ON t1.id = tcc.parent_id
+        WHERE t1.parent_id = #{commentId}
+        ORDER BY people DESC
+        limit 0,3
+    </select>
+
+    <!-- 获取话题评论回复用户 -->
+    <select id="getCommentReplyUser" parameterType="com.quwan.beebee.param.topic.TopicCommentReplyParam" resultType="com.quwan.beebee.resp.user.UserCommentResp">
+        SELECT u.id, u.uname, u.nicker FROM bb_topic_comment c
+        LEFT JOIN bb_user u ON c.user_id = u.id
+        WHERE parent_id = #{commentId} AND topic_id = #{topicId} AND user_id = #{userId}
+    </select>
+
+    <!-- 话题举报 -->
+    <insert id="addTopicReport" parameterType="com.quwan.beebee.param.topic.TopicReportParam">
+        INSERT INTO bb_topic_comment_report (topic_id, comment_id, user_id, type, reason, addtime)
+        VALUES (#{param.topicId}, #{param.commentId}, #{param.userId}, #{param.type}, #{param.reason}, SYSDATE())
+    </insert>
+
+    <select id="getCommentReplyUserNicker" parameterType="int" resultType="java.lang.String">
+        SELECT nicker FROM bb_user WHERE id = #{parentUserId}
+    </select>
+
+</mapper>

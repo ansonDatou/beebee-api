@@ -1,0 +1,3 @@
+com/quwan/beebee/controller/UserController.class
+com/quwan/beebee/filter/SignVerifyFilter.class
+com/quwan/beebee/UserThriftConsumerApplication.class

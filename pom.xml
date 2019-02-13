@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>beebee-api</name>
+	<groupId>com.quwan.beebee</groupId>
+	<artifactId>beebee-api</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>beebee-zuul</module>
+		<module>beebee-test</module>
+		<module>beebee-eureka</module>
+		<module>beebee-security</module>
+		<module>beebee-kafka-consumer</module>
+		<module>beebee-kafka-provider</module>
+		<module>beebee-mongodb</module>
+		<module>beebee-common-thrift</module>
+		<module>beebee-common-service</module>
+		<module>beebee-archives-thrift-consumer</module>
+		<module>beebee-archives-thrift-provider-client</module>
+		<module>beebee-archives-thrift-provider-server</module>
+		<module>beebee-topic-thrift-consumer</module>
+		<module>beebee-topic-thrift-provider-client</module>
+		<module>beebee-topic-thrift-provider-server</module>
+		<module>beebee-user-thrift-consumer</module>
+		<module>beebee-user-thrift-provider-client</module>
+		<module>beebee-user-thrift-provider-server</module>
+		<module>beebee-common-service-thrift-consumer</module>
+		<module>beebee-common-service-thrift-provider-client</module>
+		<module>beebee-common-service-thrift-provider-server</module>
+		<module>beebee-third-service-thrift-consumer</module>
+		<module>beebee-third-service-thrift-provider-client</module>
+		<module>beebee-third-service-thrift-provider-server</module>
+	</modules>
+
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+		<fastjson.version>1.1.30</fastjson.version>
+	</properties>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.9.RELEASE</version>
+	</parent>
+
+	<repositories>
+		<repository>
+			<id>public</id>
+			<name>aliyun nexus</name>
+			<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>public</id>
+			<name>aliyun nexus</name>
+			<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<!--<repositories>-->
+	<!--<repository>-->
+	<!--<id>nexus</id>-->
+	<!--<name>nexus</name>-->
+	<!--<url>http://localhost:8081/nexus/content/groups/public/</url>-->
+	<!--<releases>-->
+	<!--<enabled>true</enabled>-->
+	<!--</releases>-->
+	<!--<snapshots>-->
+	<!--<enabled>true</enabled>-->
+	<!--</snapshots>-->
+	<!--</repository>-->
+	<!--</repositories>-->
+
+	<!--<distributionManagement>-->
+	<!--<repository>-->
+	<!--<id>user-release</id>-->
+	<!--<name>User Project Release</name>-->
+	<!--<url>http://localhost:8081/nexus/content/repositories/releases/</url>-->
+	<!--</repository>-->
+
+	<!--<snapshotRepository>-->
+	<!--<id>user-snapshots</id>-->
+	<!--<name>User Project SNAPSHOTS</name>-->
+	<!--<url>http://localhost:8081/nexus/content/repositories/snapshots/</url>-->
+	<!--</snapshotRepository>-->
+	<!--</distributionManagement>-->
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>Edgware.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.mybatis.spring.boot</groupId>
+				<artifactId>mybatis-spring-boot-starter</artifactId>
+				<version>1.3.1</version>
+			</dependency>
+
+			<!-- json工具 -->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>fastjson</artifactId>
+				<version>${fastjson.version}</version>
+			</dependency>
+
+			<!-- 通用工具 -->
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.5</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.4</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-codec</groupId>
+				<artifactId>commons-codec</artifactId>
+				<version>1.10</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-collections</groupId>
+				<artifactId>commons-collections</artifactId>
+				<version>3.2.2</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-fileupload</groupId>
+				<artifactId>commons-fileupload</artifactId>
+				<version>1.3.1</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-httpclient</groupId>
+				<artifactId>commons-httpclient</artifactId>
+				<version>3.1</version>
+			</dependency>
+
+			<!-- guava工具类 -->
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>19.0</version>
+			</dependency>
+
+			<!-- http请求 -->
+			<dependency>
+				<groupId>org.apache.httpcomponents</groupId>
+				<artifactId>httpasyncclient</artifactId>
+				<version>4.1.2</version>
+			</dependency>
+
+			<!-- thrift -->
+			<dependency>
+				<groupId>org.apache.thrift</groupId>
+				<artifactId>libthrift</artifactId>
+				<version>0.10.0</version>
+			</dependency>
+
+			<!-- Junit测试 -->
+			<dependency>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter-api</artifactId>
+				<version>5.0.0-M4</version>
+				<scope>test</scope>
+			</dependency>
+
+			<!-- 表单验证 -->
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-validator</artifactId>
+				<version>5.2.4.Final</version>
+			</dependency>
+			<dependency>
+				<groupId>javax.validation</groupId>
+				<artifactId>validation-api</artifactId>
+				<version>1.1.0.Final</version>
+			</dependency>
+
+			<!-- 数据库连接池 -->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid-spring-boot-starter</artifactId>
+				<version>1.1.6</version>
+			</dependency>
+
+			<!-- 七牛上传图片 -->
+			<dependency>
+				<groupId>com.qiniu</groupId>
+				<artifactId>qiniu-java-sdk</artifactId>
+				<version>7.2.6</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.squareup.okhttp3</groupId>
+				<artifactId>okhttp</artifactId>
+				<version>3.3.1</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.google.code.gson</groupId>
+				<artifactId>gson</artifactId>
+				<version>2.6.2</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.qiniu</groupId>
+				<artifactId>happy-dns-java</artifactId>
+				<version>0.1.4</version>
+				<scope>compile</scope>
+			</dependency>
+
+			<!-- For log4j -->
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-log4j</artifactId>
+				<version>1.3.8.RELEASE</version>
+			</dependency>
+
+			<!-- spring boot devtools 依赖包. -->
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-devtools</artifactId>
+				<version>1.5.9.RELEASE</version>
+				<optional>true</optional>
+			</dependency>
+
+			<dependency>
+				<groupId>org.quartz-scheduler</groupId>
+				<artifactId>quartz</artifactId>
+				<version>2.3.0</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>c3p0</artifactId>
+						<groupId>c3p0</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-data-redis</artifactId>
+				<version>1.5.10.RELEASE</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>1.5.9.RELEASE</version>
+				<configuration>
+					<fork>true</fork> <!-- 如果没有该项配置，devtools不会起作用，即应用不会restart -->
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+
+</project>

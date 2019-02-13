@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: beebee-security
+server:
+  port: 8000
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.17.2.162:8761/eureka
+  instance:
+    prefer-ip-address: true
+beebee-archives-provider: # 服务提供者的名称
+  ribbon:
+    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule

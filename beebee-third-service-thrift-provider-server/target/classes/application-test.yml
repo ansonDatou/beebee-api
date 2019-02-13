@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: beebee-third-service-thrift-provider-server
+  datasource:
+    druid:
+      driver-class-name: com.mysql.jdbc.Driver
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      aop-patterns: com.quwan.beebee.service.*
+  aop:
+    proxy-target-class: true
+
+  data:
+    mongodb:
+      host: dds-2ze4c7784b80cda41.mongodb.rds.aliyuncs.com
+      port: 3717
+      database: beebee
+      username: beebee
+      password: beebee
+
+server:
+  port: 8731
+thrift:
+  server:
+    port: 8741
+
+# first 数据源配置
+first:
+  datasource:
+    name: common-first
+    url: jdbc:mysql://rm-2ze17zn3c36jnxgu1.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_spring
+    password: spring@123
+
+# second 数据源配置
+second:
+  datasource:
+    name: common-second
+    url: jdbc:mysql://rr-2ze23rw6430qq06ed.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_spring
+    password: spring@123
+
+# third 数据源配置
+third:
+  datasource:
+    name: common-third
+    url: jdbc:mysql://rr-2ze9g3nsrc73q2k4j.mysql.rds.aliyuncs.com:3306/beebee?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+    username: beebee_spring
+    password: spring@123
+
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://user:password123@172.17.2.172:8761/eureka
+  instance:
+    prefer-ip-address: true # 在管控台URL的显示，默认是false
+    instance-id: ${spring.application.name}:${spring.cloud.client.ipAddress}:${spring.application.instance_id:${server.port}} # 管控台显示
+    metadata-map:
+      zone: ABC      # eureka可以理解的元数据
+      lilizhou: BBC  # 不会影响客户端行为
+    lease-renewal-interval-in-seconds: 5

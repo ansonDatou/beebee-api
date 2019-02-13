@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quwan.beebee.dao.ThirdDao">
+
+	<!-- 发送验证码 -->
+	<insert id="sendMsg" parameterType="com.quwan.beebee.param.third.SendMsgParam">
+		INSERT INTO bb_mobile_auth (mobile, authcode, add_time)
+		VALUES (#{param.phone}, #{param.msg}, SYSDATE())
+	</insert>
+
+</mapper>
